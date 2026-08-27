@@ -4,7 +4,7 @@ import standard_values from '@/ontology/standard-values';
 
 import { useEffect, useState } from 'react';
 import PropLine from './PropLine';
-import isValidHttpUrl from '@/helpers/isValidHttpUrl';
+import isValidUrl from '@/helpers/isValidUrl';
 import { operation } from '@/helpers/Enums';
 
 
@@ -35,7 +35,7 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                                     "api:p": "https://onerecord.iata.org/ns/cargo#" + changeMap[index].label,
                                     "api:o": [{
                                         "@type": "api:OperationObject",
-                                        "api:hasDatatype": changeMap[index].type,
+                                        "api:hasDatatype": changeMap[index].type ? changeMap[index].type : "http://www.w3.org/2001/XMLSchema#string",
                                         "api:hasValue": changeMap[index].oldValue
                                     }]
                                 });
@@ -47,7 +47,7 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                                     "api:p": "https://onerecord.iata.org/ns/cargo#" + changeMap[index].label,
                                     "api:o": [{
                                         "@type": "api:OperationObject",
-                                        "api:hasDatatype": changeMap[index].type,
+                                        "api:hasDatatype": changeMap[index].type ? changeMap[index].type : "http://www.w3.org/2001/XMLSchema#string",
                                         "api:hasValue": changeMap[index].newValue
                                     }]
                                 })
@@ -62,7 +62,7 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                                     "api:p": "https://onerecord.iata.org/ns/cargo#" + changeMap[index].label,
                                     "api:o": [{
                                         "@type": "api:OperationObject",
-                                        "api:hasDatatype": changeMap[index].type,
+                                        "api:hasDatatype": changeMap[index].type ? changeMap[index].type : "http://www.w3.org/2001/XMLSchema#string",
                                         "api:hasValue": changeMap[index].oldValue
                                     }]
                                 });
@@ -76,7 +76,7 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                                     "api:p": "https://onerecord.iata.org/ns/cargo#" + changeMap[index].label,
                                     "api:o": [{
                                         "@type": "api:OperationObject",
-                                        "api:hasDatatype": changeMap[index].type,
+                                        "api:hasDatatype": changeMap[index].type ? changeMap[index].type : "http://www.w3.org/2001/XMLSchema#string",
                                         "api:hasValue": changeMap[index].newValue
                                     }]
                                 });
@@ -96,7 +96,7 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                                                 "api:p": "https://onerecord.iata.org/ns/cargo#"+property,
                                                 "api:o": [{
                                                     "@type": "api:OperationObject",
-                                                    "api:hasDatatype": propertyDesc.TypeIRI,
+                                                    "api:hasDatatype": propertyDesc.TypeIRI ? propertyDesc.TypeIRI : "http://www.w3.org/2001/XMLSchema#string",
                                                     "api:hasValue": standard_values[propertyDesc.TypeIRI]
                                                 }]
                                             });
@@ -134,6 +134,18 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                             body: JSON.stringify(body_obj)
                         })
                         if (res.status == 201) {
+                            let header_obj = {};
+                            res.headers.forEach((val, key) => { header_obj[key] = val })
+                            let acceptPatch = await fetch(header_obj['location']+'?status=REQUEST_ACCEPTED', {
+                                method: "PATCH",
+                                headers: {
+                                    "Content-Type": "application/ld+json",
+                                    "Accept": "application/ld+json",
+                                    "Authorization": "Bearer " + token
+                                }
+                            })
+                            //Add slip to let the server process the request before reload
+                            await new Promise(r => setTimeout(r, 3000));
                             setInEdit(0)
                             setRefetch(true)
                         }
@@ -187,12 +199,18 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
             }
 
             if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
-                //External link
-                if (data["@id"] != null && isValidHttpUrl(data["@id"])) {
+                //External link object
+                if (data["@id"] != null && isValidUrl(data["@id"]) && data["@id"].includes('/logistics-objects/')) {
                     line.isEditable = true
                     line.isExtObj = true
                     line.value = data["@id"]
                     innerlinks.push({ loType: line.label, loLocation: data["@id"] })
+                    lineContainer.push(line)
+                }
+                // CCL https://onerecord.iata.org/ns/coreCodeLists#MeasurementUnitCode_CEL
+                if (data["@id"] != null && isValidUrl(data["@id"]) && data["@id"].includes('https://onerecord.iata.org/ns/coreCodeLists#')) {
+                    line.isEditable = true
+                    line.value = data["@id"].substring(data["@id"].indexOf('_')+1)
                     lineContainer.push(line)
                 }
                 // Value
@@ -202,7 +220,7 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                     lineContainer.push(line)
                 }
                 //Embedded object
-                if (data["@id"] != null && !isValidHttpUrl(data["@id"])) {
+                if (data["@id"] != null && !isValidUrl(data["@id"])) {
                     line.value = data["@id"]
                     line.isEmbeddedObj = true
                     lineContainer.push(line)
@@ -218,7 +236,7 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                     recursiveParse(item, property, parent, indentation, lineContainer, innerlinks, (index + 1))
                 })
             } else {
-                if (isValidHttpUrl(data)) {
+                if (isValidUrl(data)) {
                     line.isEditable = true
                     line.value = data
                     line.isURL = true;

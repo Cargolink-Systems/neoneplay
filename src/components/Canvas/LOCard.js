@@ -23,13 +23,58 @@ const IconReload = () => {
 
 
 
-const getTypeString = (loType) => {
-    if (loType && loType.includes('#')) {
-        return loType.split("#").at(-1)
-    }
-    return ''
+const selectType = (loTypes) => {
+    if(Array.isArray(loTypes)){
+        loTypes.forEach(function (element) {
+            if (!element.includes('LogisticsObject')) {
+               loTypes = element; 
+            }
+         })
+        }
+    return loTypes 
 }
 
+function resolveGraphById(jsonLd, id) {
+    if (!jsonLd["@graph"]) {
+        return jsonLd;
+    }
+
+    // Find the element with the matching @id
+    const mainElement = jsonLd["@graph"].find(element => element["@id"] === id);
+    if (!mainElement) {
+        throw new Error("Element with the provided @id not found");
+    }
+
+    // Function to replace links with corresponding nodes
+    function replaceLinksWithNodes(obj) {
+        for (const key in obj) {
+            if (obj[key] && typeof obj[key] === 'object' && obj[key]["@id"]) {
+                // Find the linked node
+                const linkedNode = jsonLd["@graph"].find(element => element["@id"] === obj[key]["@id"]);
+                if (linkedNode) {
+                    obj[key] = {...linkedNode};
+                }
+                replaceLinksWithNodes(obj[key])
+            }
+            if (obj[key] && Array.isArray(obj[key])) {
+                // Find the linked node
+                obj[key].forEach(arrayObj => {
+                    const linkedNode = jsonLd["@graph"].find(element => element["@id"] === arrayObj["@id"]);
+                    if (linkedNode) { 
+                        for (const field in linkedNode){
+                            arrayObj[field] = linkedNode[field];    
+                        }
+                    }
+                    replaceLinksWithNodes(arrayObj)
+                })
+            }
+        }
+    }
+
+    // Recursively replace links in the main element
+    replaceLinksWithNodes(mainElement);
+    return mainElement;
+}
 
 const LOCard = ({ id, data, isConnectable }) => {
 
@@ -83,6 +128,7 @@ const LOCard = ({ id, data, isConnectable }) => {
         prom.catch(() => { setIs404(true) })
         let res = await prom;
         let body = await res.json()
+        body = resolveGraphById(body, url)
         let header_obj = {};
         res.headers.forEach((val, key) => { header_obj[key] = val })
         if (!cardData || parseInt(cardData.headers["revision"]) != parseInt(header_obj["revision"])) {
@@ -125,11 +171,12 @@ const LOCard = ({ id, data, isConnectable }) => {
             prom.catch(() => { setIs404(true) })
             let res = await prom;
             let body = await res.json()
-            let apiNameSpace = "https://onerecord.iata.org/ns/api";
-            let hasChangeRequest = apiNameSpace + "#hasChangeRequest";
-            let hasChange = apiNameSpace + "#hasChange";
-            let hasRevision = apiNameSpace + "#hasRevision";
-            let isRequestedAt = apiNameSpace + "#isRequestedAt";
+            body = resolveGraphById(body, data.uri + "/audit-trail")
+            //IMPORTANT: Need add a library to deal with JSONLD
+            let hasChangeRequest = "hasChangeRequest";
+            let hasChange = "hasChange";
+            let hasRevision = "hasRevision";
+            let isRequestedAt = "isRequestedAt";
             let value = "@value"
             let changeRequest;
             if (Array.isArray(body[hasChangeRequest])) {
@@ -223,12 +270,9 @@ const LOCard = ({ id, data, isConnectable }) => {
 
                         <div id="header-top-row" className='inline-flex ml-1'>
                             <div className=''><IconProvider objectType={cardData && cardData.body['@type']} className="" /></div>
-                            <span className=' ml-2 font-sans text-2xl mb-1 ml-1 mr-1'>
-                                LO:
-                            </span>
                             <span className='font-semibold text-2xl table-cell align-middle mr-auto'>
                                 <div className="w-[160px] overflow-hidden">
-                                    {cardData && getTypeString(cardData.headers['type'])}
+                                    {cardData && selectType(cardData.body['@type'])}
                                 </div>
                                 {(!cardData && !is404) &&
                                     <div role="status" className='absolute top-[30px] left-[150px] scale-150'>
