@@ -7,6 +7,7 @@ import PropLine from './PropLine';
 import isValidUrl from '@/helpers/isValidUrl';
 import codeListCode from '@/helpers/codeListCode';
 import { operation } from '@/helpers/Enums';
+import waitForRevision from '@/helpers/waitForRevision';
 
 
 
@@ -145,8 +146,8 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                                     "Authorization": "Bearer " + token
                                 }
                             })
-                            //Add slip to let the server process the request before reload
-                            await new Promise(r => setTimeout(r, 3000));
+                            const applied = await waitForRevision(id, token, parseInt(cardData.headers["latest-revision"]))
+                            if (applied === null) console.warn("refreshing without revision confirmation", id)
                             setInEdit(0)
                             setRefetch(true)
                         }
