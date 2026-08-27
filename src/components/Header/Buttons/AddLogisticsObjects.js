@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Select from 'react-select';
 import iri_description from '@/ontology/iri-description';
 import useInternalStore from '@/store';
@@ -6,10 +6,11 @@ import listObjects from '@/helpers/listObjects';
 
 const PAGE_SIZE = 10;
 
-const browseError = (status) => {
-    if (status == 401) return "Unauthorized — check the server token in the settings";
-    if (status == 0) return "Server not reachable";
-    return "Listing not supported by this server (HTTP " + status + ")";
+const browseError = (result) => {
+    if (result.parseError) return "Server returned an unexpected response";
+    if (result.status == 401) return "Unauthorized — check the server token in the settings";
+    if (result.status == 0) return "Server not reachable";
+    return "Listing not supported by this server (HTTP " + result.status + ")";
 }
 
 const AddLogisticsObjects = () => {
@@ -21,6 +22,8 @@ const AddLogisticsObjects = () => {
     const [createdLO, setCreatedLO] = useState("")
     const [browseResult, setBrowseResult] = useState(null)
     const [browseOffset, setBrowseOffset] = useState(0)
+    const [browsing, setBrowsing] = useState(false)
+    const browseSeq = useRef(0)
     const { servers } = useInternalStore()
 
     const LOOptions = Object.values(iri_description).filter((item) => item.Type == 'Class').map((item) => { return { label: item.Label, value: item.Label } })
@@ -34,8 +37,10 @@ const AddLogisticsObjects = () => {
     }, [showPopup])
 
     useEffect(() => {
+        browseSeq.current++
         setBrowseResult(null)
         setBrowseOffset(0)
+        setBrowsing(false)
     }, [showPopup, LOType, server])
 
     const createLO = async () => {
@@ -67,6 +72,8 @@ const AddLogisticsObjects = () => {
     }
 
     const browse = async (offset) => {
+        const seq = ++browseSeq.current
+        setBrowsing(true)
         const result = await listObjects({
             protocol: server.protocol,
             host: server.value,
@@ -75,6 +82,8 @@ const AddLogisticsObjects = () => {
             limit: PAGE_SIZE + 1,
             offset: offset
         })
+        if (seq !== browseSeq.current) return
+        setBrowsing(false)
         setBrowseOffset(offset)
         setBrowseResult({ ...result, hasMore: result.items.length > PAGE_SIZE, items: result.items.slice(0, PAGE_SIZE) })
     }
@@ -108,26 +117,27 @@ const AddLogisticsObjects = () => {
                                     <Select options={LOOptions}
                                         isClearable={true}
                                         isSearchable={true}
-                                        onChange={(item) => { if (item != null) { setLOType(item) } }}
+                                        onChange={(item) => { setLOType(item ?? "") }}
                                     />
                                     <span>Servers</span>
                                     <Select options={serverOptions}
                                         isClearable={true}
                                         isSearchable={true}
-                                        onChange={(item) => { if (item != null) { setServer(item) } }}
+                                        onChange={(item) => { setServer(item ?? "") }}
                                     />
                                 </div>
                                 <div className="flex gap-2">
-                                    <button className=" bg-violet-300 text-white font-light p-1 rounded-full w-full hover:bg-violet-400 active:bg-violet-500 transition-color duration-200 disabled:opacity-50"
+                                    <button className="flex items-center justify-center gap-1 bg-violet-300 text-white font-light p-1 rounded-full w-full hover:bg-violet-400 active:bg-violet-500 transition-color duration-200 disabled:opacity-50"
                                         disabled={!LOType || !server}
                                         onClick={createLO}>
-                                        <svg className="fill-white mx-auto" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M440-200v-240H200v-80h240v-240h80v240h240v80H520v240h-80Z" /></svg>
+                                        <svg className="fill-white" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M440-200v-240H200v-80h240v-240h80v240h240v80H520v240h-80Z" /></svg>
+                                        Create
                                     </button>
-                                    <button className=" bg-violet-300 text-white font-light p-1 rounded-full w-full hover:bg-violet-400 active:bg-violet-500 transition-color duration-200 disabled:opacity-50"
-                                        title="Browse existing objects"
-                                        disabled={!LOType || !server}
+                                    <button className="flex items-center justify-center gap-1 bg-violet-300 text-white font-light p-1 rounded-full w-full hover:bg-violet-400 active:bg-violet-500 transition-color duration-200 disabled:opacity-50"
+                                        disabled={!LOType || !server || browsing}
                                         onClick={() => { browse(0) }}>
-                                        <svg className="fill-white mx-auto" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M280-600v-80h560v80H280Zm0 160v-80h560v80H280Zm0 160v-80h560v80H280ZM160-600q-17 0-28.5-11.5T120-640q0-17 11.5-28.5T160-680q17 0 28.5 11.5T200-640q0 17-11.5 28.5T160-600Zm0 160q-17 0-28.5-11.5T120-480q0-17 11.5-28.5T160-520q17 0 28.5 11.5T200-480q0 17-11.5 28.5T160-440Zm0 160q-17 0-28.5-11.5T120-320q0-17 11.5-28.5T160-360q17 0 28.5 11.5T200-320q0 17-11.5 28.5T160-280Z" /></svg>
+                                        <svg className="fill-white" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M280-600v-80h560v80H280Zm0 160v-80h560v80H280Zm0 160v-80h560v80H280ZM160-600q-17 0-28.5-11.5T120-640q0-17 11.5-28.5T160-680q17 0 28.5 11.5T200-640q0 17-11.5 28.5T160-600Zm0 160q-17 0-28.5-11.5T120-480q0-17 11.5-28.5T160-520q17 0 28.5 11.5T200-480q0 17-11.5 28.5T160-440Zm0 160q-17 0-28.5-11.5T120-320q0-17 11.5-28.5T160-360q17 0 28.5 11.5T200-320q0 17-11.5 28.5T160-280Z" /></svg>
+                                        {browsing ? "Loading…" : "Browse"}
                                     </button>
                                 </div>
                             </div>
@@ -148,7 +158,7 @@ const AddLogisticsObjects = () => {
                                 <span className="text-xl font-medium pl-1">{LOType.value} on {server.label}</span>
                                 <div className="rounded-b-xl bg-slate-300 p-2">
                                     {!browseResult.ok &&
-                                        <span className="block p-2">{browseError(browseResult.status)}</span>
+                                        <span className="block p-2">{browseError(browseResult)}</span>
                                     }
                                     {browseResult.ok && browseResult.items.length == 0 &&
                                         <span className="block p-2">No objects found</span>

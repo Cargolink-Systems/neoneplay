@@ -55,6 +55,14 @@ describe('listObjects', () => {
         expect(res.items).toEqual([{ id: 'http://a/logistics-objects/1', type: 'Waybill' }])
     })
 
+    it('flags a non-JSON body distinctly', async () => {
+        global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.reject(new Error('bad json')) })
+        const res = await listObjects(args)
+        expect(res.ok).toBe(false)
+        expect(res.parseError).toBe(true)
+        expect(res.status).toBe(200)
+    })
+
     it('returns no items for an empty response', async () => {
         global.fetch = respond({})
         const res = await listObjects(args)
