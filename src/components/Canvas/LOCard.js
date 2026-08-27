@@ -109,7 +109,8 @@ const LOCard = ({ id, data, isConnectable }) => {
             setDisplayName(server.org_name)
         }
 
-        token && getCardData(data.uri, token)
+        const liveToken = server ? server.token : token
+        liveToken && getCardData(data.uri, liveToken)
         cardData && console.log("CARD DATA:", cardData)
     }, [token, servers])
 
@@ -167,7 +168,7 @@ const LOCard = ({ id, data, isConnectable }) => {
                 setToken(server.token)
                 setDisplayName(server.org_name)
             }
-            getCardData(data.uri, token)
+            getCardData(data.uri, server ? server.token : token)
             setRefetch(false)
             setFirstOpen(false)
         }
