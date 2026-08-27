@@ -8,6 +8,7 @@ import PropList from './ORContent/PropList';
 import useInternalStore from '@/store';
 import { expansion } from '@/helpers/Enums';
 import matchServer from '@/helpers/matchServer';
+import requestError from '@/helpers/requestError';
 
 
 const IconReload = () => {
@@ -59,6 +60,13 @@ const LOCard = ({ id, data, isConnectable }) => {
 
     const RFI = useReactFlow();
 
+    const fail = (failed404, failedAuth) => {
+        const server = matchServer(servers, data.uri)
+        setIs404(failed404)
+        setIsAuthFailed(failedAuth)
+        server && setServerAuthFailed(server.host, failedAuth)
+        setCardData(null)
+    }
 
     useEffect(() => {
         const server = matchServer(servers, data.uri)
@@ -86,27 +94,17 @@ const LOCard = ({ id, data, isConnectable }) => {
             }
         )
         let res;
-        const server = matchServer(servers, data.uri)
-        const fail = (failed404, failedAuth) => {
-            setIs404(failed404)
-            setIsAuthFailed(failedAuth)
-            server && setServerAuthFailed(server.host, failedAuth)
-            setCardData(null)
-        }
         try {
             res = await prom;
         } catch {
             fail(true, false)
             return
         }
-        if (res.status == 401) {
-            fail(false, true)
+        if (requestError(res)) {
+            fail(res.status !== 401, res.status === 401)
             return
         }
-        if (!res.ok) {
-            fail(true, false)
-            return
-        }
+        const server = matchServer(servers, data.uri)
         setIs404(false)
         setIsAuthFailed(false)
         server && setServerAuthFailed(server.host, false)
@@ -147,14 +145,22 @@ const LOCard = ({ id, data, isConnectable }) => {
                 "cache-control": "no-cache",
                 "Authorization": "Bearer " + token
             }
-            let prom = fetch(data.uri + "/audit-trail",
-                {
-                    cache: "no-store",
-                    headers: send_header
-                }
-            )
-            prom.catch(() => { setIs404(true) })
-            let res = await prom;
+            let res;
+            try {
+                res = await fetch(data.uri + "/audit-trail",
+                    {
+                        cache: "no-store",
+                        headers: send_header
+                    }
+                )
+            } catch {
+                fail(true, false)
+                return
+            }
+            if (requestError(res)) {
+                fail(res.status !== 401, res.status === 401)
+                return
+            }
             let body = await res.json()
             body = resolveGraphById(body, data.uri + "/audit-trail")
             if (body === null) return
@@ -277,7 +283,7 @@ const LOCard = ({ id, data, isConnectable }) => {
                                 }
                                 {isAuthFailed &&
                                     <div className='absolute top-[35px] left-[40px] w-[270px] text-center scale-90 text-amber-600 text-sm'>
-                                        Token expired — update it in the Servers dialog (gear icon)
+                                        Token invalid or expired — update it in the Servers dialog (gear icon)
                                     </div>
                                 }
                             </span>
