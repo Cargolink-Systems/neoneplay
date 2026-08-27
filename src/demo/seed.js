@@ -2,6 +2,7 @@ export const DEMO_HOST = "demo.onerecord.example";
 export const DEMO_BASE = `https://${DEMO_HOST}`;
 
 const lo = (slug) => `${DEMO_BASE}/logistics-objects/${slug}`;
+const minutesAgo = (m) => new Date(Date.now() - m * 60000).toISOString().replace(/\.\d{3}Z$/, "Z");
 const codeList = (list, code) => ({ "@id": `https://onerecord.iata.org/ns/coreCodeLists#${list}_${code}` });
 const kg = (slug, value) => ({
     "@id": `demo:${slug}`,
@@ -75,7 +76,7 @@ const objects = [
         "transportIdentifier": "AV241",
         "departureLocation": { "@id": lo("loc-mia") },
         "arrivalLocation": { "@id": lo("loc-bog") },
-        "departureDate": { "@value": "2026-08-26T18:40:00Z" },
+        "departureDate": { "@value": minutesAgo(240) },
         "operatingTransportMeans": { "@id": lo("means-n1234av") },
         "loadingActions": {
             "@id": "demo:loading-av241",
@@ -87,11 +88,11 @@ const objects = [
 ];
 
 const events = {
-    [lo("piece-1")]: [event("Received from flight", "RCF", "2026-08-26T14:05:00Z", lo("piece-1"))],
-    [lo("piece-2")]: [event("Received from flight", "RCF", "2026-08-26T14:06:00Z", lo("piece-2"))],
-    [lo("piece-3")]: [event("Received from flight", "RCF", "2026-08-26T14:07:00Z", lo("piece-3"))],
-    [lo("piece-4")]: [event("Received from flight", "RCF", "2026-08-26T14:08:00Z", lo("piece-4"))],
-    [lo("movement-av241")]: [event("Departed", "DEP", "2026-08-26T18:47:00Z", lo("movement-av241"))],
+    [lo("piece-1")]: [event("Received from flight", "RCF", minutesAgo(518), lo("piece-1"))],
+    [lo("piece-2")]: [event("Received from flight", "RCF", minutesAgo(517), lo("piece-2"))],
+    [lo("piece-3")]: [event("Received from flight", "RCF", minutesAgo(516), lo("piece-3"))],
+    [lo("piece-4")]: [event("Received from flight", "RCF", minutesAgo(515), lo("piece-4"))],
+    [lo("movement-av241")]: [event("Departed", "DEP", minutesAgo(233), lo("movement-av241"))],
 };
 
 export const DEMO_WAYBILL = lo("waybill-729-12345675");
@@ -99,7 +100,7 @@ export const DEMO_WAYBILL = lo("waybill-729-12345675");
 export const seedBlob = () => ({
     objects: Object.fromEntries(JSON.parse(JSON.stringify(objects)).map((body) => [
         body["@id"],
-        { body, revision: 1, lastModified: "2026-08-26T18:47:00Z" },
+        { body, revision: 1, lastModified: minutesAgo(233) },
     ])),
     events: JSON.parse(JSON.stringify(events)),
     changeRequests: {},

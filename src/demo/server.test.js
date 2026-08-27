@@ -234,3 +234,17 @@ describe('demo server', () => {
         expect(page.body['@id']).toBe(all.body['@graph'][1]['@id'])
     })
 })
+
+describe('seed timestamps', () => {
+    it('are recent, ordered, and second-precision ISO', () => {
+        const { seedBlob } = require('./seed')
+        const blob = seedBlob()
+        const iso = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
+        const rcf = blob.events[`${DEMO_BASE}/logistics-objects/piece-1`][0].eventDate['@value']
+        const dep = blob.events[`${DEMO_BASE}/logistics-objects/movement-av241`][0].eventDate['@value']
+        expect(rcf).toMatch(iso)
+        expect(dep).toMatch(iso)
+        expect(new Date(rcf) < new Date(dep)).toBe(true)
+        expect(Date.now() - new Date(dep).getTime()).toBeLessThan(24 * 3600 * 1000)
+    })
+})
