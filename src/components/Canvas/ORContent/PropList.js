@@ -5,6 +5,7 @@ import standard_values from '@/ontology/standard-values';
 import { useEffect, useState } from 'react';
 import PropLine from './PropLine';
 import isValidUrl from '@/helpers/isValidUrl';
+import codeListCode from '@/helpers/codeListCode';
 import { operation } from '@/helpers/Enums';
 import waitForRevision from '@/helpers/waitForRevision';
 
@@ -209,9 +210,9 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                     lineContainer.push(line)
                 }
                 // CCL https://onerecord.iata.org/ns/coreCodeLists#MeasurementUnitCode_CEL
-                if (data["@id"] != null && isValidUrl(data["@id"]) && data["@id"].includes('https://onerecord.iata.org/ns/coreCodeLists#')) {
+                if (data["@id"] != null && isValidUrl(data["@id"]) && codeListCode(data["@id"]) != null) {
                     line.isEditable = true
-                    line.value = data["@id"].substring(data["@id"].indexOf('_')+1)
+                    line.value = codeListCode(data["@id"])
                     lineContainer.push(line)
                 }
                 // Value
