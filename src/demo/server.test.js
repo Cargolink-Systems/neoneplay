@@ -90,6 +90,66 @@ describe('demo server', () => {
         expect(fresh.handle('GET', shipment).body['goodsDescription']).toBe('auto parts')
     })
 
+    it('replaces a code-list value keeping its IRI shape', () => {
+        const subject = 'demo:gw-piece-1'
+        const piece = `${DEMO_BASE}/logistics-objects/piece-1`
+        server.handle('PATCH', piece, {
+            'api:hasOperation': [
+                { 'api:op': { '@id': 'api:DELETE' }, 'api:s': subject, 'api:p': 'https://onerecord.iata.org/ns/cargo#unit', 'api:o': [{ 'api:hasValue': 'KGM' }] },
+                { 'api:op': { '@id': 'api:ADD' }, 'api:s': subject, 'api:p': 'https://onerecord.iata.org/ns/cargo#unit', 'api:o': [{ 'api:hasValue': 'LBR' }] },
+            ],
+        })
+        const unit = server.handle('GET', piece).body['grossWeight']['unit']
+        expect(unit).toEqual({ '@id': 'https://onerecord.iata.org/ns/coreCodeLists#MeasurementUnitCode_LBR' })
+    })
+
+    it('replaces a link value keeping its @id shape', () => {
+        const waybill = DEMO_WAYBILL
+        const target = `${DEMO_BASE}/logistics-objects/shipment-1c77`
+        server.handle('PATCH', waybill, {
+            'api:hasOperation': [
+                { 'api:op': { '@id': 'api:DELETE' }, 'api:s': waybill, 'api:p': 'https://onerecord.iata.org/ns/cargo#shipment', 'api:o': [{ 'api:hasValue': target }] },
+                { 'api:op': { '@id': 'api:ADD' }, 'api:s': waybill, 'api:p': 'https://onerecord.iata.org/ns/cargo#shipment', 'api:o': [{ 'api:hasValue': `${DEMO_BASE}/logistics-objects/other` }] },
+            ],
+        })
+        expect(server.handle('GET', waybill).body['shipment']).toEqual({ '@id': `${DEMO_BASE}/logistics-objects/other` })
+    })
+
+    it('skips operations whose subject does not resolve', () => {
+        server.handle('PATCH', shipment, {
+            'api:hasOperation': [
+                { 'api:op': { '@id': 'api:DELETE' }, 'api:s': 'demo:nope', 'api:p': 'https://onerecord.iata.org/ns/cargo#goodsDescription', 'api:o': [{ 'api:hasValue': 'auto parts' }] },
+            ],
+        })
+        expect(server.handle('GET', shipment).body['goodsDescription']).toBe('auto parts')
+    })
+
+    it('serves the pre-change body for ?at= of an older revision', () => {
+        server.handle('PATCH', shipment, {
+            'api:hasOperation': [
+                { 'api:op': { '@id': 'api:DELETE' }, 'api:s': shipment, 'api:p': 'https://onerecord.iata.org/ns/cargo#goodsDescription', 'api:o': [{ 'api:hasValue': 'auto parts' }] },
+                { 'api:op': { '@id': 'api:ADD' }, 'api:s': shipment, 'api:p': 'https://onerecord.iata.org/ns/cargo#goodsDescription', 'api:o': [{ 'api:hasValue': 'auto parts (verified)' }] },
+            ],
+        })
+        const request = server.handle('GET', `${shipment}/audit-trail`).body['hasChangeRequest'][0]
+        const at = request['isRequestedAt']['@value'].split('.')[0].replaceAll('-', '').replaceAll(':', '') + 'Z'
+        const res = server.handle('GET', `${shipment}?at=${at}`)
+        expect(res.body['goodsDescription']).toBe('auto parts')
+        expect(res.headers['revision']).toBe('1')
+        expect(res.headers['latest-revision']).toBe('2')
+    })
+
+    it('reset restores the seed', () => {
+        server.handle('PATCH', shipment, {
+            'api:hasOperation': [
+                { 'api:op': { '@id': 'api:DELETE' }, 'api:s': shipment, 'api:p': 'https://onerecord.iata.org/ns/cargo#goodsDescription', 'api:o': [{ 'api:hasValue': 'auto parts' }] },
+            ],
+        })
+        server.reset()
+        expect(server.handle('GET', shipment).body['goodsDescription']).toBe('auto parts')
+        expect(server.handle('GET', shipment).headers['revision']).toBe('1')
+    })
+
     it('creates an object and returns its location', () => {
         const res = server.handle('POST', `${DEMO_BASE}/logistics-objects`, { '@type': 'cargo:Piece' })
         expect(res.status).toBe(201)

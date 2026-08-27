@@ -1,4 +1,5 @@
 import { seedBlob, DEMO_BASE } from "./seed";
+import codeListCode from "../helpers/codeListCode";
 
 const API = "https://onerecord.iata.org/ns/api";
 const CARGO = "https://onerecord.iata.org/ns/cargo#";
@@ -40,24 +41,41 @@ const findSubject = (body, subject) => {
     return null;
 };
 
-const applyOperation = (target, op) => {
+const sameValue = (stored, sent) => {
+    if (plainValue(stored) == sent) return true;
+    const iri = stored && typeof stored === "object" ? stored["@id"] : null;
+    const code = codeListCode(iri);
+    return code !== null && code === sent;
+};
+
+const restoreShape = (oldIri, value) => {
+    if (!oldIri || typeof value !== "string") return value;
+    const oldCode = codeListCode(oldIri);
+    if (oldCode !== null) return { "@id": oldIri.slice(0, oldIri.length - oldCode.length) + value };
+    return { "@id": value };
+};
+
+const applyOperation = (target, op, removed) => {
     const key = op["api:p"].split("#").pop();
     const value = op["api:o"][0]["api:hasValue"];
     const kind = op["api:op"]["@id"].split(/[#:]/).pop();
     if (kind === "DELETE") {
         const current = target[key];
-        if (Array.isArray(current)) {
-            target[key] = current.filter((item) => plainValue(item) != value);
-            if (!target[key].length) delete target[key];
-        } else if (current !== undefined && plainValue(current) == value) {
-            delete target[key];
+        const items = current === undefined ? [] : [].concat(current);
+        const gone = items.find((item) => sameValue(item, value));
+        if (gone !== undefined) {
+            if (gone && typeof gone === "object" && gone["@id"]) removed[key] = gone["@id"];
+            const kept = items.filter((item) => item !== gone);
+            if (!kept.length) delete target[key];
+            else target[key] = Array.isArray(current) ? kept : kept[0];
         }
     }
     if (kind === "ADD") {
+        const next = restoreShape(removed[key], value);
         const current = target[key];
-        if (current === undefined) target[key] = value;
-        else if (Array.isArray(current)) current.push(value);
-        else target[key] = [current, value];
+        if (current === undefined) target[key] = next;
+        else if (Array.isArray(current)) current.push(next);
+        else target[key] = [current, next];
     }
 };
 
@@ -76,9 +94,25 @@ export const createDemoServer = (storage) => {
         body,
     });
 
-    const getObject = (uri) => {
+    const atKey = (iso) => iso.split(".")[0].replaceAll("-", "").replaceAll(":", "") + "Z";
+
+    const getObject = (uri, query) => {
         const entry = blob.objects[uri];
         if (!entry) return { status: 404, headers: {}, body: {} };
+        const at = new URLSearchParams(query || "").get("at");
+        if (at) {
+            const request = (blob.changeRequests[uri] || [])
+                .find((cr) => atKey(cr["isRequestedAt"]["@value"]) === at);
+            const revision = request && request["hasChange"]["hasRevision"]["@value"];
+            const snapshot = revision && blob.history && blob.history[uri] && blob.history[uri][revision];
+            if (snapshot) {
+                return json(200, snapshot.body, {
+                    "revision": String(revision),
+                    "latest-revision": String(entry.revision),
+                    "last-modified": new Date(snapshot.lastModified).toUTCString(),
+                });
+            }
+        }
         return json(200, entry.body, {
             "revision": String(entry.revision),
             "latest-revision": String(entry.revision),
@@ -110,10 +144,16 @@ export const createDemoServer = (storage) => {
     const applyChange = (uri, raw) => {
         const entry = blob.objects[uri];
         if (!entry) return { status: 404, headers: {}, body: {} };
+        ((blob.history ??= {})[uri] ??= {})[entry.revision] = {
+            body: JSON.parse(JSON.stringify(entry.body)),
+            lastModified: entry.lastModified,
+        };
         const ops = [].concat(raw["api:hasOperation"] || []);
+        const removed = {};
         for (const op of ops) {
-            const target = findSubject(entry.body, op["api:s"]) || entry.body;
-            applyOperation(target, op);
+            const target = findSubject(entry.body, op["api:s"]);
+            if (!target) continue;
+            applyOperation(target, op, removed);
         }
         const requestUri = `${DEMO_BASE}/action-requests/${nextId()}`;
         (blob.changeRequests[uri] ??= []).push({
@@ -184,8 +224,13 @@ export const createDemoServer = (storage) => {
         if (clean.endsWith("/audit-trail")) {
             return auditTrail(clean.slice(0, -"/audit-trail".length));
         }
-        return method === "PATCH" ? applyChange(clean, body) : getObject(clean);
+        return method === "PATCH" ? applyChange(clean, body) : getObject(clean, query);
     };
 
-    return { handle };
+    const reset = () => {
+        blob = seedBlob();
+        storage.save(blob);
+    };
+
+    return { handle, reset };
 };
