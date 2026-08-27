@@ -27,6 +27,7 @@ const useInternalStore = create(
                 return { servers: state.servers.map((item) => item.host === host ? { ...item, authFailed: failed } : item) }
             }),
             updateServerToken: (host, token) => set((state) => ({ servers: state.servers.map((item) => item.host === host ? { ...item, token: token, authFailed: false } : item) })),
+            dropServer: (host) => set((state) => ({ servers: state.servers.filter((item) => item.host !== host) })),
             removeServer: (server) => set((state) => ({
                 servers: state.servers.filter(function (item) {
                     return (item.name+'-'+item.host !== server.name+'-'+server.host )

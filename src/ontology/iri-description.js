@@ -986,6 +986,27 @@ const iri_description = {
         "Label": "containedPieceInPiece",
         "Description": "Reference to the parent Piece if the Piece is contained within another Piece"
     },
+    ":pieces": {
+        "IRI_full": "https://onerecord.iata.org/ns/cargo#pieces",
+        "Type": "ObjectProperty",
+        "TypeIRI": "https://onerecord.iata.org/ns/cargo#Piece",
+        "Label": "pieces",
+        "Description": "The pieces of the shipment"
+    },
+    ":ofShipment": {
+        "IRI_full": "https://onerecord.iata.org/ns/cargo#ofShipment",
+        "Type": "ObjectProperty",
+        "TypeIRI": "https://onerecord.iata.org/ns/cargo#Shipment",
+        "Label": "ofShipment",
+        "Description": "Reference to the Shipment the Piece is assigned to"
+    },
+    ":partyRole": {
+        "IRI_full": "https://onerecord.iata.org/ns/cargo#partyRole",
+        "Type": "ObjectProperty",
+        "TypeIRI": "https://onerecord.iata.org/ns/cargo#CodeListElement",
+        "Label": "partyRole",
+        "Description": "Role of the Party, e.g. shipper or consignee"
+    },
     ":containedPieces": {
         "IRI_full": "https://onerecord.iata.org/ns/cargo#containedPieces",
         "Type": "ObjectProperty",
