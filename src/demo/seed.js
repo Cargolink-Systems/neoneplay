@@ -97,7 +97,7 @@ const events = {
 export const DEMO_WAYBILL = lo("waybill-729-12345675");
 
 export const seedBlob = () => ({
-    objects: Object.fromEntries(objects.map((body) => [
+    objects: Object.fromEntries(JSON.parse(JSON.stringify(objects)).map((body) => [
         body["@id"],
         { body, revision: 1, lastModified: "2026-08-26T18:47:00Z" },
     ])),

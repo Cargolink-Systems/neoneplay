@@ -72,6 +72,24 @@ describe('demo server', () => {
         expect(trail.body['hasChangeRequest']).toHaveLength(1)
     })
 
+    it('re-seeds pristine after an applied change', () => {
+        const change = {
+            '@type': 'api:Change',
+            'api:hasLogisticsObject': { '@id': shipment },
+            'api:hasRevision': { '@value': '1' },
+            'api:hasOperation': [
+                { '@type': 'api:Operation', 'api:op': { '@id': 'api:DELETE' }, 'api:s': shipment, 'api:p': 'https://onerecord.iata.org/ns/cargo#goodsDescription', 'api:o': [{ 'api:hasValue': 'auto parts' }] },
+                { '@type': 'api:Operation', 'api:op': { '@id': 'api:ADD' }, 'api:s': shipment, 'api:p': 'https://onerecord.iata.org/ns/cargo#goodsDescription', 'api:o': [{ 'api:hasValue': 'auto parts (verified)' }] },
+            ],
+        }
+        const res = server.handle('PATCH', shipment, change)
+        server.handle('PATCH', `${res.headers['location']}?status=REQUEST_ACCEPTED`)
+        expect(server.handle('GET', shipment).body['goodsDescription']).toBe('auto parts (verified)')
+
+        const fresh = createDemoServer(memoryStorage())
+        expect(fresh.handle('GET', shipment).body['goodsDescription']).toBe('auto parts')
+    })
+
     it('creates an object and returns its location', () => {
         const res = server.handle('POST', `${DEMO_BASE}/logistics-objects`, { '@type': 'cargo:Piece' })
         expect(res.status).toBe(201)
