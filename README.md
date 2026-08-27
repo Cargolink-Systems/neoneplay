@@ -9,6 +9,10 @@
 
 Maintained by [Cargolink](https://cargolink.aero). Point it at any ONE Record server and it renders logistics objects — waybills, shipments, pieces, movements — as connected cards on an infinite canvas: click a card's link badge to pull in what it references, expand a card to read or edit its properties, open its event panel to see its status history. Issues and PRs welcome.
 
+## Origins
+
+This project started as [NE:ONE Play](https://devpost.com/software/ne-one-play), a hackathon build at the [ONE Record Hackathon](https://onerecord-fra.devpost.com) by Man Bao Tran Nguyen (design), Niclas Scheiber (test data), and Erik Goldenstein (implementation) — see the [original repository](https://github.com/erikgoldenstein/neoneplay) and [submission video](http://www.youtube.com/watch?v=WwSXzxIoqN8) for that history. This fork carries forward the NE:ONE server compatibility fixes from a later community fork, and Cargolink maintains it going forward with automatic server configuration, an in-browser demo mode, tests, and CI.
+
 ## Getting started
 
 Requires Node 20+.
@@ -92,6 +96,3 @@ To preconfigure a server on the deployed service, set the `NEONE_PLAY_*` variabl
 
 Found something else? [Open an issue](https://github.com/Cargolink-Systems/neoneplay/issues).
 
-## Origins
-
-This project started as [NE:ONE Play](https://devpost.com/software/ne-one-play), a hackathon build at the [ONE Record Hackathon](https://onerecord-fra.devpost.com) by Man Bao Tran Nguyen (design), Niclas Scheiber (test data), and Erik Goldenstein (implementation) — see the [original repository](https://github.com/erikgoldenstein/neoneplay) and [submission video](http://www.youtube.com/watch?v=WwSXzxIoqN8) for that history. This fork carries forward the NE:ONE server compatibility fixes from a later community fork, and Cargolink maintains it going forward with automatic server configuration, an in-browser demo mode, tests, and CI.
