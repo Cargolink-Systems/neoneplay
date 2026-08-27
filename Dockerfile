@@ -1,20 +1,19 @@
-FROM node:18.19.0-alpine3.19 AS deps
+FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-FROM node:18.19.0-alpine3.19 AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ARG NEXT_PUBLIC_DEMO_MODE
 ENV NEXT_PUBLIC_DEMO_MODE=$NEXT_PUBLIC_DEMO_MODE
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN if ! grep -q "output: 'standalone'," next.config.js; then sed -i "/experimental:/i \ \ output: 'standalone'," next.config.js; fi
 RUN npm run build
 
-FROM node:18.19.0-alpine3.19 AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
