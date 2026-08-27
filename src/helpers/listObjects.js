@@ -20,7 +20,8 @@ const listObjects = async ({ protocol, host, token, typeIri, limit = 10, offset 
         if (!res.ok) return { ok: false, status: res.status, items: [] };
         const body = await res.json();
         const entries = body["@graph"] ? body["@graph"] : (body["@id"] ? [body] : []);
-        return { ok: true, status: res.status, items: entries.map(toItem) };
+        const items = entries.filter((entry) => entry && entry["@id"]).map(toItem);
+        return { ok: true, status: res.status, items: items };
     } catch {
         return { ok: false, status: 0, items: [] };
     }

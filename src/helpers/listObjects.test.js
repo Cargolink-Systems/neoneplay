@@ -55,4 +55,18 @@ describe('listObjects', () => {
         const res = await listObjects(args)
         expect(res).toEqual({ ok: false, status: 0, items: [] })
     })
+
+    it('drops @graph entries without an @id', async () => {
+        global.fetch = jest.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ '@graph': [
+                { '@id': 'https://x/logistics-objects/a', '@type': 'Piece' },
+                { '@type': 'Piece' },
+            ] }),
+        })
+        const res = await listObjects({ protocol: 'https', host: 'x', token: 't', typeIri: 'cargo#Piece' })
+        expect(res.items).toHaveLength(1)
+        expect(res.items[0].id).toBe('https://x/logistics-objects/a')
+    })
 })
