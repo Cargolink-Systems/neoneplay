@@ -244,7 +244,7 @@ function EventPanel({ selectedObject, setSelectedObject }) {
                                     </table>
                                 </div>
                                 :
-                                <span> No Events for this Logistics Object</span>
+                                !error && <span> No Events for this Logistics Object</span>
                             }
                         </div>
                         <div className="block bg-slate-200 p-2  m-2 ml-0 w-full rounded-3xl ">

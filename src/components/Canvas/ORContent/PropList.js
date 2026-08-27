@@ -2,7 +2,7 @@ import iri_description from '@/ontology/iri-description';
 import embobject_properties from '@/ontology/embobject-properties';
 import standard_values from '@/ontology/standard-values';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PropLine from './PropLine';
 import isValidUrl from '@/helpers/isValidUrl';
 import requestError, { acceptError, networkError, pendingError } from '@/helpers/requestError';
@@ -14,10 +14,16 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
     const [data, setData] = useState([])
     const [changeMap, setChangeMap] = useState({})
     const [saveError, setSaveError] = useState('')
+    const keepSaveError = useRef(false)
 
     useEffect(() => {
         if (!inEdit) {
             setData(data.filter((line) => !line.isAddedLine))
+        }
+        if (keepSaveError.current) {
+            keepSaveError.current = false
+        } else {
+            setSaveError('')
         }
     }, [inEdit])
 
@@ -138,17 +144,25 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                                 body: JSON.stringify(body_obj)
                             })
                         } catch {
+                            keepSaveError.current = true
                             setSaveError(networkError)
                             setInEdit(1)
                             return
                         }
                         const patchErr = requestError(res)
                         if (patchErr) {
+                            keepSaveError.current = true
                             setSaveError(patchErr)
                             setInEdit(1)
                         } else {
                             let header_obj = {};
                             res.headers.forEach((val, key) => { header_obj[key] = val })
+                            if (res.status != 201 || !header_obj['location']) {
+                                keepSaveError.current = true
+                                setSaveError('Unexpected server response (' + res.status + ') — the change request may not have been created.')
+                                setInEdit(1)
+                                return
+                            }
                             let acceptPatch
                             try {
                                 acceptPatch = await fetch(header_obj['location']+'?status=REQUEST_ACCEPTED', {
@@ -160,14 +174,18 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                                     }
                                 })
                             } catch {
+                                keepSaveError.current = true
                                 setSaveError(pendingError(networkError))
                                 setInEdit(0)
+                                setRefetch(true)
                                 return
                             }
                             const acceptErr = acceptError(acceptPatch)
                             if (acceptErr) {
+                                keepSaveError.current = true
                                 setSaveError(acceptErr)
                                 setInEdit(0)
+                                setRefetch(true)
                             } else {
                                 setSaveError('')
                                 //Add slip to let the server process the request before reload
