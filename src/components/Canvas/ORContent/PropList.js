@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import PropLine from './PropLine';
 import isValidUrl from '@/helpers/isValidUrl';
 import { operation } from '@/helpers/Enums';
+import waitForRevision from '@/helpers/waitForRevision';
 
 
 
@@ -144,8 +145,7 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                                     "Authorization": "Bearer " + token
                                 }
                             })
-                            //Add slip to let the server process the request before reload
-                            await new Promise(r => setTimeout(r, 3000));
+                            await waitForRevision(id, token, parseInt(cardData.headers["latest-revision"]))
                             setInEdit(0)
                             setRefetch(true)
                         }
