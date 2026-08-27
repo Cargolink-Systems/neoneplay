@@ -5,6 +5,7 @@ import standard_values from '@/ontology/standard-values';
 import { useEffect, useState } from 'react';
 import PropLine from './PropLine';
 import isValidUrl from '@/helpers/isValidUrl';
+import requestError from '@/helpers/requestError';
 import { operation } from '@/helpers/Enums';
 
 
@@ -12,6 +13,7 @@ import { operation } from '@/helpers/Enums';
 const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setInEdit, setRefetch, token }) => {
     const [data, setData] = useState([])
     const [changeMap, setChangeMap] = useState({})
+    const [saveError, setSaveError] = useState('')
 
     useEffect(() => {
         if (!inEdit) {
@@ -133,7 +135,11 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                             },
                             body: JSON.stringify(body_obj)
                         })
-                        if (res.status == 201) {
+                        const patchErr = requestError(res)
+                        if (patchErr) {
+                            setSaveError(patchErr)
+                            setInEdit(0)
+                        } else {
                             let header_obj = {};
                             res.headers.forEach((val, key) => { header_obj[key] = val })
                             let acceptPatch = await fetch(header_obj['location']+'?status=REQUEST_ACCEPTED', {
@@ -144,10 +150,17 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                                     "Authorization": "Bearer " + token
                                 }
                             })
-                            //Add slip to let the server process the request before reload
-                            await new Promise(r => setTimeout(r, 3000));
-                            setInEdit(0)
-                            setRefetch(true)
+                            const acceptErr = requestError(acceptPatch)
+                            if (acceptErr) {
+                                setSaveError(acceptErr)
+                                setInEdit(0)
+                            } else {
+                                setSaveError('')
+                                //Add slip to let the server process the request before reload
+                                await new Promise(r => setTimeout(r, 3000));
+                                setInEdit(0)
+                                setRefetch(true)
+                            }
                         }
                     } else {
                         console.log("body obj not parsed")
@@ -314,6 +327,7 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
 
     return (
         <>
+            {saveError && <div className="text-red-600 text-xs ml-4 mb-1">{saveError}</div>}
             <div className={`ml-4 overflow-y-scroll
             ${expansionState == 1 && "max-h-[200px]"} 
             ${expansionState == 2 && "max-h-[300px]"} `}

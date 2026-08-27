@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import useInternalStore from "@/store";
+import requestError from '@/helpers/requestError';
 import Select from 'react-select';
 
 
@@ -11,6 +12,7 @@ function EventPanel({ selectedObject, setSelectedObject }) {
     const [eventTimeType, setEventTimeType] = useState({})
     const [company, setCompany] = useState('')
     const [listLE, setListLE] = useState([])
+    const [error, setError] = useState('')
     const { servers } = useInternalStore()
 
     const eventTimeTypes = [{ label: 'ACTUAL', value: 'ACTUAL' }, { label: 'ESTIMATED', value: 'ESTIMATED' },
@@ -97,6 +99,13 @@ function EventPanel({ selectedObject, setSelectedObject }) {
             }
         })
         let res = await prom;
+        const readErr = requestError(res)
+        if (readErr) {
+            setError(readErr)
+            setListLE([])
+            return
+        }
+        setError('')
         let body = await res.json()
         if (res.status == 200) {
             let eventList = []
@@ -186,11 +195,14 @@ function EventPanel({ selectedObject, setSelectedObject }) {
             body: JSON.stringify(body_obj)
         })
         let res = await prom;
-        if (res.status == 201) {
-            cleanInterface();
-            readLE(selectedObject);
+        const createErr = requestError(res)
+        if (createErr) {
+            setError(createErr)
+            return
         }
-
+        setError('')
+        cleanInterface();
+        readLE(selectedObject);
     }
 
     return (
@@ -203,6 +215,7 @@ function EventPanel({ selectedObject, setSelectedObject }) {
                         </button>
                         <div className="block bg-slate-200 p-2  m-2 ml-0 w-full rounded-3xl ">
                             <span className="text-xl font-medium pl-1 pt-2">Logistics Events</span>
+                            {error && <div className="text-red-600 text-sm pl-1 pt-1">{error}</div>}
                             {listLE.length > 0 ?
                                 <div className="rounded-b-xl bg-slate-300 mt-1">
                                     <table className="table-fixed w-[100%]">
