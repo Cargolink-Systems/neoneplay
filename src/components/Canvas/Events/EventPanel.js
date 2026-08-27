@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import useInternalStore from "@/store";
-import requestError from '@/helpers/requestError';
+import requestError, { networkError } from '@/helpers/requestError';
 import Select from 'react-select';
 
 
@@ -90,15 +90,21 @@ function EventPanel({ selectedObject, setSelectedObject }) {
             }
         })
 
-        let prom = fetch(selectedObject + "/logistics-events", {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/ld+json",
-                "Accept": "application/ld+json",
-                "Authorization": "Bearer " + token
-            }
-        })
-        let res = await prom;
+        let res
+        try {
+            res = await fetch(selectedObject + "/logistics-events", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/ld+json",
+                    "Accept": "application/ld+json",
+                    "Authorization": "Bearer " + token
+                }
+            })
+        } catch {
+            setError(networkError)
+            setListLE([])
+            return
+        }
         const readErr = requestError(res)
         if (readErr) {
             setError(readErr)
@@ -185,16 +191,21 @@ function EventPanel({ selectedObject, setSelectedObject }) {
             }
         })
 
-        let prom = fetch(selectedObject + "/logistics-events", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/ld+json",
-                "Accept": "application/ld+json",
-                "Authorization": "Bearer " + token
-            },
-            body: JSON.stringify(body_obj)
-        })
-        let res = await prom;
+        let res
+        try {
+            res = await fetch(selectedObject + "/logistics-events", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/ld+json",
+                    "Accept": "application/ld+json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify(body_obj)
+            })
+        } catch {
+            setError(networkError)
+            return
+        }
         const createErr = requestError(res)
         if (createErr) {
             setError(createErr)

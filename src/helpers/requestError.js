@@ -4,9 +4,10 @@ const requestError = (res) => {
     return 'Request failed (' + res.status + ')'
 }
 
-export const acceptError = (res) => {
-    const err = requestError(res)
-    return err && 'Change request is pending on the server — do not resubmit. ' + err
-}
+export const networkError = 'Server not reachable — check the host and your network.'
+
+export const pendingError = (err) => err && 'Change request is pending on the server — do not resubmit. ' + err
+
+export const acceptError = (res) => pendingError(requestError(res))
 
 export default requestError

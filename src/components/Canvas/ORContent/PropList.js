@@ -5,7 +5,7 @@ import standard_values from '@/ontology/standard-values';
 import { useEffect, useState } from 'react';
 import PropLine from './PropLine';
 import isValidUrl from '@/helpers/isValidUrl';
-import requestError, { acceptError } from '@/helpers/requestError';
+import requestError, { acceptError, networkError, pendingError } from '@/helpers/requestError';
 import { operation } from '@/helpers/Enums';
 
 
@@ -127,14 +127,21 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                     }
                     //make fetch
                     if (Object.keys(body_obj["api:hasOperation"]).length) {
-                        let res = await fetch(id, {
-                            method: "PATCH",
-                            headers: {
-                                "Content-Type": "application/ld+json",
-                                "Authorization": "Bearer " + token
-                            },
-                            body: JSON.stringify(body_obj)
-                        })
+                        let res
+                        try {
+                            res = await fetch(id, {
+                                method: "PATCH",
+                                headers: {
+                                    "Content-Type": "application/ld+json",
+                                    "Authorization": "Bearer " + token
+                                },
+                                body: JSON.stringify(body_obj)
+                            })
+                        } catch {
+                            setSaveError(networkError)
+                            setInEdit(1)
+                            return
+                        }
                         const patchErr = requestError(res)
                         if (patchErr) {
                             setSaveError(patchErr)
@@ -142,14 +149,21 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                         } else {
                             let header_obj = {};
                             res.headers.forEach((val, key) => { header_obj[key] = val })
-                            let acceptPatch = await fetch(header_obj['location']+'?status=REQUEST_ACCEPTED', {
-                                method: "PATCH",
-                                headers: {
-                                    "Content-Type": "application/ld+json",
-                                    "Accept": "application/ld+json",
-                                    "Authorization": "Bearer " + token
-                                }
-                            })
+                            let acceptPatch
+                            try {
+                                acceptPatch = await fetch(header_obj['location']+'?status=REQUEST_ACCEPTED', {
+                                    method: "PATCH",
+                                    headers: {
+                                        "Content-Type": "application/ld+json",
+                                        "Accept": "application/ld+json",
+                                        "Authorization": "Bearer " + token
+                                    }
+                                })
+                            } catch {
+                                setSaveError(pendingError(networkError))
+                                setInEdit(0)
+                                return
+                            }
                             const acceptErr = acceptError(acceptPatch)
                             if (acceptErr) {
                                 setSaveError(acceptErr)

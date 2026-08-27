@@ -1,5 +1,5 @@
 const requestError = require('./requestError').default
-const { acceptError } = require('./requestError')
+const { acceptError, networkError, pendingError } = require('./requestError')
 
 describe('requestError', () => {
     it('returns null for successful responses', () => {
@@ -26,5 +26,17 @@ describe('acceptError', () => {
         expect(err).toMatch(/pending/)
         expect(err).toMatch(/do not resubmit/)
         expect(err).toMatch(/token/i)
+    })
+})
+
+describe('pendingError', () => {
+    it('wraps a network failure in the pending message', () => {
+        const err = pendingError(networkError)
+        expect(err).toMatch(/pending/)
+        expect(err).toMatch(/not reachable/)
+    })
+
+    it('passes through null', () => {
+        expect(pendingError(null)).toBeNull()
     })
 })
