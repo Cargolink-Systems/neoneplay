@@ -47,6 +47,20 @@ The token request runs server-side (`/api/token`), so the client secret never re
 
 Run the tests with `npm test`.
 
+### ☁️ Deploy the demo
+The root `Dockerfile` builds a standalone production image. `NEXT_PUBLIC_DEMO_MODE` is baked at build time, so pass it as a build arg:
+
+```bash
+docker build --build-arg NEXT_PUBLIC_DEMO_MODE=1 -t neoneplay-demo .
+docker run -p 3000:3000 neoneplay-demo
+```
+
+`cloudbuild.yaml` builds and deploys the same image to Google Cloud Run (substitutions: `_REGION`, `_SERVICE`, `_REPO` for the Artifact Registry repository):
+
+```bash
+gcloud builds submit --config cloudbuild.yaml
+```
+
 ### 🚧 Known Issues
 - One Record Server has to have enabled [CORS Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
 - When using One Record Servers without token authentication you need to expand the card to load the data (fixing this should just be adding a dependency to the useEffect Effect Array)
