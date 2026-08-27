@@ -129,6 +129,7 @@ const LOCard = ({ id, data, isConnectable }) => {
         let res = await prom;
         const server = matchServer(servers, data.uri)
         if (res.status == 401) {
+            setIs404(false)
             setIsAuthFailed(true)
             server && setServerAuthFailed(server.host, true)
             return
@@ -137,6 +138,7 @@ const LOCard = ({ id, data, isConnectable }) => {
             setIs404(true)
             return
         }
+        setIs404(false)
         setIsAuthFailed(false)
         server && setServerAuthFailed(server.host, false)
         let body = await res.json()
