@@ -6,6 +6,7 @@ import moment from 'moment';
 import PropList from './ORContent/PropList';
 import useInternalStore from '@/store';
 import { expansion } from '@/helpers/Enums';
+import matchServer from '@/helpers/matchServer';
 
 
 const IconReload = () => {
@@ -83,13 +84,14 @@ const LOCard = ({ id, data, isConnectable }) => {
     const [links, setLinks] = useState([])
     const [inEdit, setInEdit] = useState(0)
 
-    const { servers } = useInternalStore()
+    const { servers, setServerAuthFailed } = useInternalStore()
     const position = useStore(s => s.nodeInternals.get(id)?.position);
 
     const [color, setColor] = useState("#ffffff")
     const [displayName, setDisplayName] = useState("")
     const [token, setToken] = useState("")
     const [is404, setIs404] = useState(false)
+    const [isAuthFailed, setIsAuthFailed] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
     const [refetch, setRefetch] = useState(false)
     const [firstOpen, setFirstOpen] = useState(false)
@@ -100,14 +102,12 @@ const LOCard = ({ id, data, isConnectable }) => {
 
 
     useEffect(() => {
-        const host = data.uri.split("//").at(-1).split("/logistics-objects").at(0)
-        servers.map((server, index) => {
-            if (!host.indexOf(server.host)) {
-                setColor(server.color)
-                setToken(server.token)
-                setDisplayName(server.org_name)
-            }
-        })
+        const server = matchServer(servers, data.uri)
+        if (server) {
+            setColor(server.color)
+            setToken(server.token)
+            setDisplayName(server.org_name)
+        }
 
         token && getCardData(data.uri, token)
         cardData && console.log("CARD DATA:", cardData)
@@ -127,6 +127,18 @@ const LOCard = ({ id, data, isConnectable }) => {
         )
         prom.catch(() => { setIs404(true) })
         let res = await prom;
+        const server = matchServer(servers, data.uri)
+        if (res.status == 401) {
+            setIsAuthFailed(true)
+            server && setServerAuthFailed(server.host, true)
+            return
+        }
+        if (!res.ok) {
+            setIs404(true)
+            return
+        }
+        setIsAuthFailed(false)
+        server && setServerAuthFailed(server.host, false)
         let body = await res.json()
         body = resolveGraphById(body, url)
         let header_obj = {};
@@ -140,14 +152,12 @@ const LOCard = ({ id, data, isConnectable }) => {
 
     useEffect(() => {
         if (refetch || firstOpen) {
-            const host = data.uri.split("//").at(-1)
-            servers.map((server) => {
-                if (!host.indexOf(server.host)) {
-                    setColor(server.color)
-                    setToken(server.token)
-                    setDisplayName(server.org_name)
-                }
-            })
+        const server = matchServer(servers, data.uri)
+        if (server) {
+            setColor(server.color)
+            setToken(server.token)
+            setDisplayName(server.org_name)
+        }
             getCardData(data.uri, token)
             setRefetch(false)
             setFirstOpen(false)
@@ -259,7 +269,7 @@ const LOCard = ({ id, data, isConnectable }) => {
     return (
         <div className=" rounded-lg bg-white/[0.9] drop-shadow-lg shadow-neutral-750 nowheel">
 
-            <div id="node-header" className={`flex rounded-t-lg w-[350px] h-[110px] border-b-[1px] border-gray-200  ${is404 ? "bg-red-100" : "bg-slate-50/[0.9]"}  duration-500 rounded-lg ${expansionState > expansion.Closed ? "" : ""}`}>
+            <div id="node-header" className={`flex rounded-t-lg w-[350px] h-[110px] border-b-[1px] border-gray-200  ${is404 ? "bg-red-100" : isAuthFailed ? "bg-amber-100" : "bg-slate-50/[0.9]"}  duration-500 rounded-lg ${expansionState > expansion.Closed ? "" : ""}`}>
                 <div id="header-left-col" className='block relative w-full'>
                     <div note="colored bar"
                         className={`absolute left-0  w-3 transition-all delay-150 duration-200  h-full rounded-l-lg ${expansionState > expansion.Closed ? "" : ""}`}
@@ -274,7 +284,7 @@ const LOCard = ({ id, data, isConnectable }) => {
                                 <div className="w-[160px] overflow-hidden">
                                     {cardData && selectType(cardData.body['@type'])}
                                 </div>
-                                {(!cardData && !is404) &&
+                                {(!cardData && !is404 && !isAuthFailed) &&
                                     <div role="status" className='absolute top-[30px] left-[150px] scale-150'>
                                         <svg aria-hidden="true" className="w-8 h-8 mr-2 text-gray-200 animate-spin dark:text-gray-600 " style={{ fill: color }} viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor" />
@@ -288,6 +298,11 @@ const LOCard = ({ id, data, isConnectable }) => {
                                         Invalid Request
                                     </div>
 
+                                }
+                                {isAuthFailed &&
+                                    <div className='absolute top-[45px] left-[80px] text-amber-600 text-sm'>
+                                        Token expired — update it in settings
+                                    </div>
                                 }
                             </span>
                             {cardData && cardData.headers["latest-revision"] &&
