@@ -4,13 +4,23 @@ import { DEMO_HOST } from "@/demo/seed";
 
 const Settings = () => {
     const [seeSettings, setSeeSettings] = useState(false)
-    const { servers, addServer, removeServer, cleanServer } = useInternalStore()
+    const { servers, addServer, removeServer, cleanServer, updateServerToken } = useInternalStore()
 
     const [org, setOrg] = useState("");
     const [host, setHost] = useState("");
     const [protocol, setProtocol] = useState("");
     const [token, setToken] = useState("");
     const [color, setColor] = useState("#ffffff")
+    const [editHost, setEditHost] = useState(null)
+    const [newTokens, setNewTokens] = useState({})
+
+    const setNewToken = (host, value) => setNewTokens({ ...newTokens, [host]: value })
+
+    const saveToken = (host) => {
+        updateServerToken(host, newTokens[host])
+        setEditHost(null)
+        setNewToken(host, "")
+    }
 
     useEffect(() => {
         //addServer("AIRLINE XYZ", "ne-one-airline-1-9d58e17495dd.herokuapp.com", globalToken, "#DD7373","https"); // Airline
@@ -46,26 +56,51 @@ const Settings = () => {
                                 <div className="overflow-y-scroll h-[10vw] no-scrollbar">
                                     {servers.map((server, index) => {
                                         return (
-                                            <li key={index} className="list-none border-b-2 border-violet-300 py-1 flex gap-2 ">
-                                                <span className="flex-1 w-16 pl-1">{server.org_name}</span>
-                                                <span className="flex-1 w-16">{server.protocol}</span>
-                                                <span className="flex-1 w-32">{server.host}</span>
-                                                <div className="">
-                                                    {server.host === DEMO_HOST && typeof window !== "undefined" && window.demoServer &&
-                                                        <button className="flex-none bg-amber-400 hover:bg-amber-500 text-white text-xs px-2 py-1 rounded-full mr-2"
-                                                            onClick={() => { window.demoServer.reset(); window.location.reload() }}>
-                                                            Reset demo data
-                                                        </button>}
-                                                    {/* Color Picker */}
-                                                    <input className="mr-2" type="color" name="" id="" defaultValue={server.color} style={{ height: "100%" }} />
-                                                    {/* Delete */}
-                                                    {server.host !== DEMO_HOST &&
-                                                        <button className="flex-none bg-violet-300 p-1 rounded-full mr-auto"
+                                            <div key={index} className="border-b-2 border-violet-300">
+                                                <li className="list-none py-1 flex gap-2 ">
+                                                    <span className="flex-1 w-16 pl-1">{server.org_name}</span>
+                                                    <span className="flex-1 w-16">{server.protocol}</span>
+                                                    <span className="flex-1 w-32">{server.host}</span>
+                                                    {server.authFailed &&
+                                                        <span className="flex-none text-amber-600 text-xs my-auto">Token invalid or expired</span>
+                                                    }
+                                                    <div className="">
+                                                        {server.host === DEMO_HOST && typeof window !== "undefined" && window.demoServer &&
+                                                            <button className="flex-none bg-amber-400 hover:bg-amber-500 text-white text-xs px-2 py-1 rounded-full mr-2"
+                                                                onClick={() => { window.demoServer.reset(); window.location.reload() }}>
+                                                                Reset demo data
+                                                            </button>}
+                                                        {/* Color Picker */}
+                                                        <input className="mr-2" type="color" name="" id="" defaultValue={server.color} style={{ height: "100%" }} />
+                                                        {/* Update token */}
+                                                        {!server.authFailed && server.host !== DEMO_HOST &&
+                                                        <button className="flex-none bg-violet-300 p-1 rounded-full mr-2" title="Update token"
+                                                            onClick={() => { setEditHost(editHost === server.host ? null : server.host); setNewToken(server.host, "") }}>
+                                                            <svg className="fill-white" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M280-400q-33 0-56.5-23.5T200-480q0-33 23.5-56.5T280-560q33 0 56.5 23.5T360-480q0 33-23.5 56.5T280-400Zm0 160q-100 0-170-70T40-480q0-100 70-170t170-70q67 0 121.5 33t86.5 87h352l120 120-180 180-80-60-80 60-85-60h-47q-32 54-86.5 87T280-240Zm0-80q56 0 98.5-34t56.5-86h125l58 41 82-61 71 55 75-75-40-40H435q-14-52-56.5-86T280-640q-66 0-113 47t-47 113q0 66 47 113t113 47Z" /></svg>
+                                                        </button>
+                                                        }
+                                                        {/* Delete */}
+                                                        {server.host !== DEMO_HOST &&
+                                                        <button className="flex-none bg-violet-300 p-1 rounded-full mr-auto" title="Remove server"
                                                             onClick={() => { removeServer(server) }}>
                                                             <svg className="fill-white" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 96 960 960" width="24"><path d="M261 936q-24.75 0-42.375-17.625T201 876V306h-41v-60h188v-30h264v30h188v60h-41v570q0 24-18 42t-42 18H261Zm438-630H261v570h438V306ZM367 790h60V391h-60v399Zm166 0h60V391h-60v399ZM261 306v570-570Z" /></svg>
-                                                        </button>}
-                                                </div>
-                                            </li>
+                                                        </button>
+                                                        }
+                                                    </div>
+                                                </li>
+                                                {(editHost === server.host || server.authFailed) &&
+                                                    <div className="flex gap-2 py-1">
+                                                        <input type="password" placeholder="New token" className="flex-1 rounded-xl px-4 focus:outline-none"
+                                                            value={newTokens[server.host] || ""} onChange={e => setNewToken(server.host, e.target.value)}
+                                                            onKeyDown={e => { if (e.key === "Enter" && newTokens[server.host]) saveToken(server.host) }} />
+                                                        <button className="flex-none bg-violet-300 hover:bg-violet-400 active:bg-violet-500 transition-color duration-200 px-4 py-1 rounded-full text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                                                            disabled={!newTokens[server.host]}
+                                                            onClick={() => { saveToken(server.host) }}>
+                                                            Save
+                                                        </button>
+                                                    </div>
+                                                }
+                                            </div>
                                         )
                                     })}
                                 </div>

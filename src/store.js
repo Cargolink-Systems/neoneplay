@@ -21,6 +21,12 @@ const useInternalStore = create(
             cleanServer: () => set(() => ({ servers: [] })),
             addServer: (name, host, token, color, protocol) => set((state) => ({ servers: [...state.servers, { org_name: name, host: host, token: token, color: color, protocol: protocol }] })),
             upsertServer: (server) => set((state) => ({ servers: [...state.servers.filter((item) => item.host !== server.host), server] })),
+            setServerAuthFailed: (host, failed) => set((state) => {
+                const server = state.servers.find((item) => item.host === host)
+                if (!server || !!server.authFailed === failed) return state
+                return { servers: state.servers.map((item) => item.host === host ? { ...item, authFailed: failed } : item) }
+            }),
+            updateServerToken: (host, token) => set((state) => ({ servers: state.servers.map((item) => item.host === host ? { ...item, token: token, authFailed: false } : item) })),
             dropServer: (host) => set((state) => ({ servers: state.servers.filter((item) => item.host !== host) })),
             removeServer: (server) => set((state) => ({
                 servers: state.servers.filter(function (item) {
