@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import useInternalStore from "@/store";
+import codeListCode from '@/helpers/codeListCode';
 import Select from 'react-select';
 
 
@@ -124,7 +125,7 @@ function EventPanel({ selectedObject, setSelectedObject }) {
                         list.push(
                             <tr key={key}>
                                 <td className="border border-slate-600 text-center">{event['eventName']}</td>
-                                <td className="border border-slate-600 text-center">{event['eventCode']['code']}</td>
+                                <td className="border border-slate-600 text-center">{event['eventCode']?.['code'] ?? codeListCode(event['eventCode']?.['@id'])}</td>
                                 <td className="border border-slate-600 text-center">{event['eventDate']['@value'].replace('T', ' ').replace('Z', '')}</td>
                                 <td className="border border-slate-600 text-center">{event['eventTimeType']['@id'].split("#").pop()}</td>
                             </tr>
