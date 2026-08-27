@@ -127,14 +127,15 @@ const LOCard = ({ id, data, isConnectable }) => {
             }
         )
         let res;
+        const server = matchServer(servers, data.uri)
         try {
             res = await prom;
         } catch {
             setIs404(true)
             setIsAuthFailed(false)
+            server && setServerAuthFailed(server.host, false)
             return
         }
-        const server = matchServer(servers, data.uri)
         if (res.status == 401) {
             setIs404(false)
             setIsAuthFailed(true)
@@ -144,6 +145,7 @@ const LOCard = ({ id, data, isConnectable }) => {
         if (!res.ok) {
             setIs404(true)
             setIsAuthFailed(false)
+            server && setServerAuthFailed(server.host, false)
             return
         }
         setIs404(false)
@@ -310,7 +312,7 @@ const LOCard = ({ id, data, isConnectable }) => {
 
                                 }
                                 {isAuthFailed &&
-                                    <div className='absolute top-[45px] left-[80px] text-amber-600 text-sm'>
+                                    <div className='absolute top-[35px] left-[40px] w-[270px] text-center scale-90 text-amber-600 text-sm'>
                                         Token expired — update it in the Servers dialog (gear icon)
                                     </div>
                                 }
@@ -328,7 +330,7 @@ const LOCard = ({ id, data, isConnectable }) => {
                                 {displayName && displayName}
                                 {!displayName && cardData && cardData.body['@id'].split("/").slice(2, -2).join("/")}
                             </span>
-                            {(!is404 && isOpen) &&
+                            {(!is404 && !isAuthFailed && isOpen) &&
                                 <div
                                     ref={refs.setFloating}
                                     style={{ ...floatingStyles, fontSize: "0.67rem", lineHeight: "0.9rem" }}
@@ -338,7 +340,7 @@ const LOCard = ({ id, data, isConnectable }) => {
                                     {"Click to Copy"}
                                 </div>
                             }
-                            {!is404 &&
+                            {!is404 && !isAuthFailed &&
                                 <button className='text-xs block  whitespace-nowrap w-[250px] overflow-clip text-ellipsis bg-slate-100/[0.9] active:bg-slate-300 p-1 rounded-sm  duration-200 transition-color'
                                     ref={refs.setReference} {...getReferenceProps()}
                                     onClick={() => { navigator.clipboard.writeText(cardData ? cardData.body['@id'] : "") }}>

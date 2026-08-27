@@ -61,7 +61,7 @@ const Settings = () => {
                                                     <span className="flex-1 w-16">{server.protocol}</span>
                                                     <span className="flex-1 w-32">{server.host}</span>
                                                     {server.authFailed &&
-                                                        <span className="flex-none text-amber-600 text-xs my-auto">token expired</span>
+                                                        <span className="flex-none text-amber-600 text-xs my-auto">Token expired</span>
                                                     }
                                                     <div className="">
                                                         {/* Color Picker */}
