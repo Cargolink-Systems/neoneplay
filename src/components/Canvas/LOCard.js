@@ -277,7 +277,7 @@ const LOCard = ({ id, data, isConnectable }) => {
                                 }
                                 {is404 &&
                                     <div className='absolute top-[40px] left-[110px] scale-150 text-red-400 text-lg'>
-                                        Invalid Request
+                                        Request Failed
                                     </div>
 
                                 }
