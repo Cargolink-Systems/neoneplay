@@ -144,6 +144,7 @@ export const createDemoServer = (storage) => {
     });
 
     const addEvent = (uri, raw) => {
+        if (!blob.objects[uri]) return notFound(uri);
         const event = normalize(raw);
         if (event.linkedObject) {
             event.eventFor = event.linkedObject;

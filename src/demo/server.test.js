@@ -48,6 +48,13 @@ describe('demo server', () => {
         expect(items[1]['eventTimeType']['@id']).toBe('https://onerecord.iata.org/ns/cargo#ACTUAL')
     })
 
+    it('returns 404 when posting an event for an unknown object', () => {
+        const res = server.handle('POST', `${DEMO_BASE}/logistics-objects/nope/logistics-events`, {
+            '@type': 'cargo:LogisticsEvent',
+        })
+        expect(res.status).toBe(404)
+    })
+
     it('applies a change and bumps the revision', () => {
         const change = {
             '@type': 'api:Change',
