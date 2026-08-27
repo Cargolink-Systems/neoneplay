@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import Select from 'react-select';
 import iri_description from '@/ontology/iri-description';
 import useInternalStore from '@/store';
+import listObjects from '@/helpers/listObjects';
+
+const PAGE_SIZE = 10;
+
+const browseError = (status) => {
+    if (status == 401) return "Unauthorized — check the server token in the settings";
+    if (status == 0) return "Server not reachable";
+    return "Listing not supported by this server (HTTP " + status + ")";
+}
 
 const AddLogisticsObjects = () => {
     const [showPopup, setShowPopup] = useState(false)
@@ -10,6 +19,8 @@ const AddLogisticsObjects = () => {
     const [LOType, setLOType] = useState("");
     const [server, setServer] = useState("");
     const [createdLO, setCreatedLO] = useState("")
+    const [browseResult, setBrowseResult] = useState(null)
+    const [browseOffset, setBrowseOffset] = useState(0)
     const { servers } = useInternalStore()
 
     const LOOptions = Object.values(iri_description).filter((item) => item.Type == 'Class').map((item) => { return { label: item.Label, value: item.Label } })
@@ -20,6 +31,8 @@ const AddLogisticsObjects = () => {
         setLOType("")
         setServer("")
         setCreatedLO("")
+        setBrowseResult(null)
+        setBrowseOffset(0)
     }, [showPopup])
 
     const createLO = async () => {
@@ -48,6 +61,25 @@ const AddLogisticsObjects = () => {
             setAddNodeFlag(true)
         }
 
+    }
+
+    const browse = async (offset) => {
+        const result = await listObjects({
+            protocol: server.protocol,
+            host: server.value,
+            token: server.token,
+            typeIri: "https://onerecord.iata.org/ns/cargo#" + LOType.value,
+            limit: PAGE_SIZE,
+            offset: offset
+        })
+        setBrowseOffset(offset)
+        setBrowseResult(result)
+    }
+
+    const placeObject = (uri) => {
+        setSearchbarValue(uri)
+        setAddNodeFlag(true)
+        setShowPopup(false)
     }
 
     return (
@@ -82,10 +114,19 @@ const AddLogisticsObjects = () => {
                                         onChange={(item) => { if (item != null) { setServer(item) } }}
                                     />
                                 </div>
-                                <button className=" bg-violet-300 text-white font-light p-1 rounded-full w-full hover:bg-violet-400 active:bg-violet-500 transition-color duration-200"
-                                    onClick={createLO}>
-                                    <svg className="fill-white mx-auto" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M440-200v-240H200v-80h240v-240h80v240h240v80H520v240h-80Z" /></svg>
-                                </button>
+                                <div className="flex gap-2">
+                                    <button className=" bg-violet-300 text-white font-light p-1 rounded-full w-full hover:bg-violet-400 active:bg-violet-500 transition-color duration-200 disabled:opacity-50"
+                                        disabled={!LOType || !server}
+                                        onClick={createLO}>
+                                        <svg className="fill-white mx-auto" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M440-200v-240H200v-80h240v-240h80v240h240v80H520v240h-80Z" /></svg>
+                                    </button>
+                                    <button className=" bg-violet-300 text-white font-light p-1 rounded-full w-full hover:bg-violet-400 active:bg-violet-500 transition-color duration-200 disabled:opacity-50"
+                                        title="Browse existing objects"
+                                        disabled={!LOType || !server}
+                                        onClick={() => { browse(0) }}>
+                                        <svg className="fill-white mx-auto" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M280-600v-80h560v80H280Zm0 160v-80h560v80H280Zm0 160v-80h560v80H280ZM160-600q-17 0-28.5-11.5T120-640q0-17 11.5-28.5T160-680q17 0 28.5 11.5T200-640q0 17-11.5 28.5T160-600Zm0 160q-17 0-28.5-11.5T120-480q0-17 11.5-28.5T160-520q17 0 28.5 11.5T200-480q0 17-11.5 28.5T160-440Zm0 160q-17 0-28.5-11.5T120-320q0-17 11.5-28.5T160-360q17 0 28.5 11.5T200-320q0 17-11.5 28.5T160-280Z" /></svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         {createdLO != '' &&
@@ -98,6 +139,43 @@ const AddLogisticsObjects = () => {
                                 </button>
                                 </div>
                             </>
+                        }
+                        {browseResult &&
+                            <div className="block bg-slate-200 p-2  m-2 ml-0 w-full rounded-3xl ">
+                                <span className="text-xl font-medium pl-1">{LOType.value} on {server.label}</span>
+                                <div className="rounded-b-xl bg-slate-300 p-2">
+                                    {!browseResult.ok &&
+                                        <span className="block p-2">{browseError(browseResult.status)}</span>
+                                    }
+                                    {browseResult.ok && browseResult.items.length == 0 &&
+                                        <span className="block p-2">No objects found</span>
+                                    }
+                                    {browseResult.ok && browseResult.items.map((item) => {
+                                        return (
+                                            <button key={item.id}
+                                                className="block w-full text-left bg-slate-100 hover:bg-violet-100 active:bg-violet-200 rounded-xl p-2 mb-1 transition-color duration-200"
+                                                title="Place on canvas"
+                                                onClick={() => { placeObject(item.id) }}>
+                                                <span className="font-medium mr-2">{item.type}</span>
+                                                <span className="text-sm">{item.id.split("/").pop()}</span>
+                                            </button>
+                                        )
+                                    })}
+                                    <div className="flex justify-between mt-2">
+                                        <button className="bg-violet-300 text-white px-4 py-1 rounded-full hover:bg-violet-400 active:bg-violet-500 transition-color duration-200 disabled:opacity-50"
+                                            disabled={browseOffset == 0}
+                                            onClick={() => { browse(browseOffset - PAGE_SIZE) }}>
+                                            Prev
+                                        </button>
+                                        <span className="p-1">{browseOffset + 1} – {browseOffset + browseResult.items.length}</span>
+                                        <button className="bg-violet-300 text-white px-4 py-1 rounded-full hover:bg-violet-400 active:bg-violet-500 transition-color duration-200 disabled:opacity-50"
+                                            disabled={browseResult.items.length < PAGE_SIZE}
+                                            onClick={() => { browse(browseOffset + PAGE_SIZE) }}>
+                                            Next
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         }
                     </div>
                 </div>
