@@ -7,6 +7,8 @@
   ✨ NE:ONE Play ✨
 </h1>
 
+<p align="center"><a href="https://github.com/Cargolink-Systems/neoneplay/actions/workflows/ci.yml"><img src="https://github.com/Cargolink-Systems/neoneplay/actions/workflows/ci.yml/badge.svg" alt="CI"></a></p>
+
 This is a [Hackathon](https://onerecord-fra.devpost.com) implementation of the [NE:ONE Play](https://devpost.com/software/ne-one-play) One Record Editor. Due to the nature of this code being written in 28 hours it is not pretty and pretty buggy. Therefore, this code is to be used <b>at your own Risk</b>, this code is <b>not being maintained</b>. A maintained and production ready version is currently in the planning.
 
 > **Maintained fork** — this fork is maintained by [Cargolink](https://cargolink.aero). It combines the original hackathon project with the NE:ONE compatibility fixes from `feature/aws`, adds automatic server configuration with token refresh, and tests. Issues and PRs welcome. Original work by the authors credited below.
@@ -46,6 +48,26 @@ Instead of adding a server and pasting a token by hand in the settings dialog, t
 The token request runs server-side (`/api/token`), so the client secret never reaches the browser and the identity provider needs no CORS setup. The token is refreshed automatically before it expires. Keep secrets in your environment or compose file, never in the code.
 
 Run the tests with `npm test`.
+
+### ☁️ Deploy the demo
+The root `Dockerfile` builds a standalone production image. `NEXT_PUBLIC_DEMO_MODE` enables the in-browser demo mode (ships with PR #4; until that lands the flag has no visible effect) and is baked at build time, so pass it as a build arg:
+
+```bash
+docker build --build-arg NEXT_PUBLIC_DEMO_MODE=1 -t neoneplay-demo .
+docker run -p 3000:3000 neoneplay-demo
+```
+
+`cloudbuild.yaml` builds and deploys the same image to Google Cloud Run (substitutions: `_REGION`, `_SERVICE`, `_REPO` for the Artifact Registry repository):
+
+```bash
+gcloud builds submit --config cloudbuild.yaml
+```
+
+One-time prerequisites on a fresh project, or the command above fails:
+- The Artifact Registry repository named by `_REPO` must exist: `gcloud artifacts repositories create cloud-run-source-deploy --repository-format=docker --location=<region>` (or run `gcloud run deploy --source .` once, which creates it).
+- The Cloud Build service account needs the Cloud Run Admin and Service Account User roles to deploy.
+
+To preconfigure a server on the deployed service, set the `NEONE_PLAY_*` variables from the section above on the Cloud Run service (for example `gcloud run services update <service> --update-env-vars ...`, or via secrets); they are read at runtime, not build time.
 
 ### 🚧 Known Issues
 - One Record Server has to have enabled [CORS Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
