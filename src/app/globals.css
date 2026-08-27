@@ -25,3 +25,9 @@
 .floatingedges .react-flow__handle {
     opacity: 0;
   }
+
+.react-flow__node.search-match > div {
+    outline: 3px solid #a78bfa;
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+}

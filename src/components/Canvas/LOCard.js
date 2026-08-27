@@ -6,9 +6,11 @@ import resolveGraphById from '@/helpers/resolveGraphById';
 import moment from 'moment';
 import PropList from './ORContent/PropList';
 import useInternalStore from '@/store';
+import useTabsStore from '@/storeTabs';
 import { expansion } from '@/helpers/Enums';
 import matchServer from '@/helpers/matchServer';
 import requestError from '@/helpers/requestError';
+import searchText from '@/helpers/searchText';
 
 
 const IconReload = () => {
@@ -45,6 +47,7 @@ const LOCard = ({ id, data, isConnectable }) => {
     const [inEdit, setInEdit] = useState(0)
 
     const { servers, setServerAuthFailed } = useInternalStore()
+    const setNodeIndex = useTabsStore(s => s.setNodeIndex)
     const position = useStore(s => s.nodeInternals.get(id)?.position);
 
     const [color, setColor] = useState("#ffffff")
@@ -120,6 +123,7 @@ const LOCard = ({ id, data, isConnectable }) => {
             let data = { headers: header_obj, body: body }
             setCardData(data)
             setselectedRevision(header_obj["revision"])
+            setNodeIndex(body['@id'] || url, { type: selectType(body['@type']), text: searchText(body) })
         }
     }
 
