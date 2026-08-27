@@ -10,24 +10,34 @@ export const demoEnabled = () => process.env.NEXT_PUBLIC_DEMO_MODE === "1";
 
 const DemoMode = () => {
     const upsertServer = useInternalStore((state) => state.upsertServer);
+    const dropServer = useInternalStore((state) => state.dropServer);
 
     useEffect(() => {
-        if (!demoEnabled() || window.demoServer) return;
+        if (!demoEnabled()) {
+            dropServer(DEMO_HOST);
+            return;
+        }
+        if (window.demoServer) return;
 
         const server = createDemoServer(browserStorage("neoneplay-demo-v1"));
         window.demoServer = server;
 
         const original = window.fetch.bind(window);
         window.fetch = (input, init) => {
-            const url = typeof input === "string" ? input : input.url;
+            const url = input instanceof Request ? input.url : String(input);
             if (!url.includes(DEMO_HOST)) return original(input, init);
-            const method = (init && init.method) || "GET";
-            const body = init && init.body ? JSON.parse(init.body) : null;
-            const res = server.handle(method, url, body);
-            return Promise.resolve(new Response(
-                res.body === null ? null : JSON.stringify(res.body),
-                { status: res.status, headers: res.headers },
-            ));
+            try {
+                const method = (init && init.method)
+                    || (input instanceof Request ? input.method : "GET");
+                const body = init && init.body ? JSON.parse(init.body) : null;
+                const res = server.handle(method, url, body);
+                return Promise.resolve(new Response(
+                    res.body === null ? null : JSON.stringify(res.body),
+                    { status: res.status, headers: res.headers },
+                ));
+            } catch (err) {
+                return Promise.reject(err);
+            }
         };
 
         upsertServer({
@@ -37,7 +47,7 @@ const DemoMode = () => {
             token: "demo",
             color: "#f59e0b",
         });
-    }, [upsertServer]);
+    }, [upsertServer, dropServer]);
 
     return null;
 };

@@ -92,4 +92,29 @@ describe('demo server', () => {
         const items = second.handle('GET', `${DEMO_BASE}/logistics-objects/piece-1/logistics-events`).body['https://onerecord.iata.org/ns/api#hasItem']
         expect(items).toHaveLength(2)
     })
+
+    it('lists objects by type via internal/_all', () => {
+        const res = server.handle('GET', `${DEMO_BASE}/logistics-objects/internal/_all?limit=20&offset=0&t=${encodeURIComponent('https://onerecord.iata.org/ns/cargo#Piece')}`)
+        expect(res.status).toBe(200)
+        expect(res.body['@graph'].length).toBeGreaterThan(1)
+        for (const item of res.body['@graph']) expect(item['@type']).toBe('Piece')
+    })
+
+    it('returns a bare object for a single _all match', () => {
+        const res = server.handle('GET', `${DEMO_BASE}/logistics-objects/internal/_all?t=${encodeURIComponent('https://onerecord.iata.org/ns/cargo#Waybill')}`)
+        expect(res.body['@graph']).toBeUndefined()
+        expect(res.body['@type']).toBe('Waybill')
+    })
+
+    it('returns an empty body when _all matches nothing', () => {
+        const res = server.handle('GET', `${DEMO_BASE}/logistics-objects/internal/_all?t=${encodeURIComponent('https://onerecord.iata.org/ns/cargo#DgDeclaration')}`)
+        expect(res.status).toBe(200)
+        expect(res.body).toEqual({})
+    })
+
+    it('applies limit and offset to _all', () => {
+        const all = server.handle('GET', `${DEMO_BASE}/logistics-objects/internal/_all?t=${encodeURIComponent('https://onerecord.iata.org/ns/cargo#Piece')}`)
+        const page = server.handle('GET', `${DEMO_BASE}/logistics-objects/internal/_all?limit=1&offset=1&t=${encodeURIComponent('https://onerecord.iata.org/ns/cargo#Piece')}`)
+        expect(page.body['@id']).toBe(all.body['@graph'][1]['@id'])
+    })
 })

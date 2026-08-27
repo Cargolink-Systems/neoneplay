@@ -152,8 +152,25 @@ export const createDemoServer = (storage) => {
         return json(201, {}, { "location": body["@id"] });
     };
 
+    const listAll = (query) => {
+        const params = new URLSearchParams(query);
+        const limit = Number(params.get("limit")) || 20;
+        const offset = Number(params.get("offset")) || 0;
+        const type = params.get("t") ? params.get("t").split("#").pop() : null;
+        const matches = Object.values(blob.objects)
+            .map((entry) => entry.body)
+            .filter((body) => !type || [].concat(body["@type"]).includes(type))
+            .slice(offset, offset + limit);
+        if (!matches.length) return json(200, {});
+        if (matches.length === 1) return json(200, matches[0]);
+        return json(200, { "@graph": matches });
+    };
+
     const handle = (method, url, body) => {
-        const clean = url.replace("http://", "https://").split("?")[0];
+        const [clean, query] = url.replace("http://", "https://").split("?");
+        if (clean === `${DEMO_BASE}/logistics-objects/internal/_all`) {
+            return listAll(query || "");
+        }
         if (clean.startsWith(`${DEMO_BASE}/action-requests/`)) {
             return { status: 204, headers: {}, body: null };
         }
