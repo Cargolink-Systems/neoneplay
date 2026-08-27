@@ -48,30 +48,45 @@ const sameValue = (stored, sent) => {
     return code !== null && code === sent;
 };
 
-const restoreShape = (oldIri, value) => {
-    if (!oldIri || typeof value !== "string") return value;
-    const oldCode = codeListCode(oldIri);
-    if (oldCode !== null) return { "@id": oldIri.slice(0, oldIri.length - oldCode.length) + value };
-    return { "@id": value };
+const XSD = "http://www.w3.org/2001/XMLSchema#";
+
+const shapeValue = (key, value, datatype, removed) => {
+    if (typeof value !== "string") return value;
+    const oldIri = removed[key];
+    if (oldIri) {
+        const oldCode = codeListCode(oldIri);
+        if (oldCode !== null) return { "@id": oldIri.slice(0, oldIri.length - oldCode.length) + value };
+        return { "@id": value };
+    }
+    if (datatype && !datatype.startsWith(XSD)) return { "@id": value };
+    if (datatype && datatype !== `${XSD}string`) return { "@value": value };
+    return value;
 };
 
-const applyOperation = (target, op, removed) => {
+const applyOperation = (target, op, ctx) => {
     const key = op["api:p"].split("#").pop();
     const value = op["api:o"][0]["api:hasValue"];
+    const datatype = op["api:o"][0]["api:hasDatatype"];
     const kind = op["api:op"]["@id"].split(/[#:]/).pop();
     if (kind === "DELETE") {
         const current = target[key];
         const items = current === undefined ? [] : [].concat(current);
         const gone = items.find((item) => sameValue(item, value));
         if (gone !== undefined) {
-            if (gone && typeof gone === "object" && gone["@id"]) removed[key] = gone["@id"];
+            if (gone && typeof gone === "object" && gone["@id"]) ctx.removed[key] = gone["@id"];
             const kept = items.filter((item) => item !== gone);
             if (!kept.length) delete target[key];
             else target[key] = Array.isArray(current) ? kept : kept[0];
         }
     }
     if (kind === "ADD") {
-        const next = restoreShape(removed[key], value);
+        let next;
+        if (typeof value === "string" && value.startsWith("_:")) {
+            next = { "@id": ctx.embeddedId(), "@type": datatype.split("#").pop() };
+            ctx.created[value] = next;
+        } else {
+            next = shapeValue(key, value, datatype, ctx.removed);
+        }
         const current = target[key];
         if (current === undefined) target[key] = next;
         else if (Array.isArray(current)) current.push(next);
@@ -149,11 +164,11 @@ export const createDemoServer = (storage) => {
             lastModified: entry.lastModified,
         };
         const ops = [].concat(raw["api:hasOperation"] || []);
-        const removed = {};
+        const ctx = { removed: {}, created: {}, embeddedId: () => `demo:new-${nextId()}` };
         for (const op of ops) {
-            const target = findSubject(entry.body, op["api:s"]);
+            const target = ctx.created[op["api:s"]] || findSubject(entry.body, op["api:s"]);
             if (!target) continue;
-            applyOperation(target, op, removed);
+            applyOperation(target, op, ctx);
         }
         const requestUri = `${DEMO_BASE}/action-requests/${nextId()}`;
         (blob.changeRequests[uri] ??= []).push({

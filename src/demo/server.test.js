@@ -115,6 +115,44 @@ describe('demo server', () => {
         expect(server.handle('GET', waybill).body['shipment']).toEqual({ '@id': `${DEMO_BASE}/logistics-objects/other` })
     })
 
+    it('creates an embedded object from a blank-node add with its sub-operations', () => {
+        const piece = `${DEMO_BASE}/logistics-objects/piece-1`
+        server.handle('PATCH', piece, {
+            'api:hasOperation': [
+                { 'api:op': { '@id': 'api:ADD' }, 'api:s': piece, 'api:p': 'https://onerecord.iata.org/ns/cargo#dimensions', 'api:o': [{ 'api:hasDatatype': 'https://onerecord.iata.org/ns/cargo#Dimensions', 'api:hasValue': '_:b12345' }] },
+                { 'api:op': { '@id': 'api:ADD' }, 'api:s': '_:b12345', 'api:p': 'https://onerecord.iata.org/ns/cargo#height', 'api:o': [{ 'api:hasDatatype': 'http://www.w3.org/2001/XMLSchema#double', 'api:hasValue': '1.0' }] },
+            ],
+        })
+        const dimensions = server.handle('GET', piece).body['dimensions']
+        expect(dimensions['@type']).toBe('Dimensions')
+        expect(dimensions['@id']).toMatch(/^demo:new-/)
+        expect(dimensions['height']).toEqual({ '@value': '1.0' })
+    })
+
+    it('shapes a fresh link add as an @id object', () => {
+        const piece = `${DEMO_BASE}/logistics-objects/piece-1`
+        const uld = `${DEMO_BASE}/logistics-objects/uld-ake12345`
+        server.handle('PATCH', piece, {
+            'api:hasOperation': [
+                { 'api:op': { '@id': 'api:ADD' }, 'api:s': piece, 'api:p': 'https://onerecord.iata.org/ns/cargo#inUld', 'api:o': [{ 'api:hasDatatype': 'https://onerecord.iata.org/ns/cargo#ULD', 'api:hasValue': uld }] },
+            ],
+        })
+        expect(server.handle('GET', piece).body['inUld']).toEqual({ '@id': uld })
+    })
+
+    it('shapes a fresh literal add by its datatype', () => {
+        const piece = `${DEMO_BASE}/logistics-objects/piece-1`
+        server.handle('PATCH', piece, {
+            'api:hasOperation': [
+                { 'api:op': { '@id': 'api:ADD' }, 'api:s': piece, 'api:p': 'https://onerecord.iata.org/ns/cargo#coload', 'api:o': [{ 'api:hasDatatype': 'http://www.w3.org/2001/XMLSchema#boolean', 'api:hasValue': 'true' }] },
+                { 'api:op': { '@id': 'api:ADD' }, 'api:s': piece, 'api:p': 'https://onerecord.iata.org/ns/cargo#upid', 'api:o': [{ 'api:hasDatatype': 'http://www.w3.org/2001/XMLSchema#string', 'api:hasValue': 'UP-1' }] },
+            ],
+        })
+        const body = server.handle('GET', piece).body
+        expect(body['coload']).toEqual({ '@value': 'true' })
+        expect(body['upid']).toBe('UP-1')
+    })
+
     it('skips operations whose subject does not resolve', () => {
         server.handle('PATCH', shipment, {
             'api:hasOperation': [

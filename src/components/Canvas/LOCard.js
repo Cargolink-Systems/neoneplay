@@ -42,7 +42,7 @@ function resolveGraphById(jsonLd, id) {
     // Find the element with the matching @id
     const mainElement = jsonLd["@graph"].find(element => element["@id"] === id);
     if (!mainElement) {
-        throw new Error("Element with the provided @id not found");
+        return null;
     }
 
     // Function to replace links with corresponding nodes
@@ -129,6 +129,10 @@ const LOCard = ({ id, data, isConnectable }) => {
         let res = await prom;
         let body = await res.json()
         body = resolveGraphById(body, url)
+        if (body === null) {
+            setIs404(true)
+            return
+        }
         let header_obj = {};
         res.headers.forEach((val, key) => { header_obj[key] = val })
         if (!cardData || parseInt(cardData.headers["revision"]) != parseInt(header_obj["revision"])) {
@@ -172,6 +176,7 @@ const LOCard = ({ id, data, isConnectable }) => {
             let res = await prom;
             let body = await res.json()
             body = resolveGraphById(body, data.uri + "/audit-trail")
+            if (body === null) return
             //IMPORTANT: Need add a library to deal with JSONLD
             let hasChangeRequest = "hasChangeRequest";
             let hasChange = "hasChange";
