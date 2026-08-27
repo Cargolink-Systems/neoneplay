@@ -2,6 +2,7 @@ export const DEMO_HOST = "demo.onerecord.example";
 export const DEMO_BASE = `https://${DEMO_HOST}`;
 
 const lo = (slug) => `${DEMO_BASE}/logistics-objects/${slug}`;
+const CARGO = "https://onerecord.iata.org/ns/cargo#";
 const minutesAgo = (m) => new Date(Date.now() - m * 60000).toISOString().replace(/\.\d{3}Z$/, "Z");
 const codeList = (list, code) => ({ "@id": `https://onerecord.iata.org/ns/coreCodeLists#${list}_${code}` });
 const kg = (slug, value) => ({
@@ -22,26 +23,26 @@ const event = (name, code, date, forUri) => ({
 
 const piece = (slug, description, weightValue) => ({
     "@id": lo(slug),
-    "@type": "Piece",
+    "@type": CARGO + "Piece",
     "goodsDescription": description,
     "grossWeight": kg(`gw-${slug}`, weightValue),
     "ofShipment": { "@id": lo("shipment-1c77") },
 });
 
 const objects = [
-    { "@id": lo("org-acme-gha"), "@type": "Company", "name": "ACME Ground Handling" },
-    { "@id": lo("org-acme-parts"), "@type": "Company", "name": "ACME Auto Parts Corp" },
-    { "@id": lo("org-andinos"), "@type": "Company", "name": "Repuestos Andinos SA" },
-    { "@id": lo("org-avianca"), "@type": "Carrier", "name": "Avianca Cargo" },
-    { "@id": lo("loc-mia"), "@type": "Location", "locationName": "Miami International Airport" },
-    { "@id": lo("loc-bog"), "@type": "Location", "locationName": "El Dorado International Airport" },
+    { "@id": lo("org-acme-gha"), "@type": CARGO + "Company", "name": "ACME Ground Handling" },
+    { "@id": lo("org-acme-parts"), "@type": CARGO + "Company", "name": "ACME Auto Parts Corp" },
+    { "@id": lo("org-andinos"), "@type": CARGO + "Company", "name": "Repuestos Andinos SA" },
+    { "@id": lo("org-avianca"), "@type": CARGO + "Carrier", "name": "Avianca Cargo" },
+    { "@id": lo("loc-mia"), "@type": CARGO + "Location", "locationName": "Miami International Airport" },
+    { "@id": lo("loc-bog"), "@type": CARGO + "Location", "locationName": "El Dorado International Airport" },
     piece("piece-1", "auto parts - gearboxes", 103.1),
     piece("piece-2", "auto parts - brake kits", 98.4),
     piece("piece-3", "auto parts - filters", 105.7),
     piece("piece-4", "auto parts - sensors", 105.3),
     {
         "@id": lo("shipment-1c77"),
-        "@type": "Shipment",
+        "@type": CARGO + "Shipment",
         "goodsDescription": "auto parts",
         "totalGrossWeight": kg("gw-total", 412.5),
         "pieces": [1, 2, 3, 4].map((n) => ({ "@id": lo(`piece-${n}`) })),
@@ -49,7 +50,7 @@ const objects = [
     },
     {
         "@id": lo("waybill-729-12345675"),
-        "@type": "Waybill",
+        "@type": CARGO + "Waybill",
         "waybillPrefix": "729",
         "waybillNumber": "12345675",
         "shipment": { "@id": lo("shipment-1c77") },
@@ -68,11 +69,11 @@ const objects = [
             },
         ],
     },
-    { "@id": lo("uld-ake12345"), "@type": "ULD", "uldSerialNumber": "12345" },
-    { "@id": lo("means-n1234av"), "@type": "TransportMeans", "vehicleRegistration": "N1234AV" },
+    { "@id": lo("uld-ake12345"), "@type": CARGO + "ULD", "uldSerialNumber": "12345" },
+    { "@id": lo("means-n1234av"), "@type": CARGO + "TransportMeans", "vehicleRegistration": "N1234AV" },
     {
         "@id": lo("movement-av241"),
-        "@type": "TransportMovement",
+        "@type": CARGO + "TransportMovement",
         "transportIdentifier": "AV241",
         "departureLocation": { "@id": lo("loc-mia") },
         "arrivalLocation": { "@id": lo("loc-bog") },
@@ -96,6 +97,7 @@ const events = {
 };
 
 export const DEMO_WAYBILL = lo("waybill-729-12345675");
+export const DEMO_MOVEMENT = lo("movement-av241");
 
 export const seedBlob = () => ({
     objects: Object.fromEntries(JSON.parse(JSON.stringify(objects)).map((body) => [

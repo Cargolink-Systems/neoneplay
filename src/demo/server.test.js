@@ -14,7 +14,7 @@ describe('demo server', () => {
         expect(res.status).toBe(200)
         expect(res.headers['revision']).toBe('1')
         expect(res.headers['latest-revision']).toBe('1')
-        expect(res.body['@type']).toBe('Waybill')
+        expect(res.body['@type']).toBe('https://onerecord.iata.org/ns/cargo#Waybill')
         expect(res.body['shipment']['@id']).toBe(shipment)
     })
 
@@ -213,13 +213,13 @@ describe('demo server', () => {
         const res = server.handle('GET', `${DEMO_BASE}/logistics-objects/internal/_all?limit=20&offset=0&t=${encodeURIComponent('https://onerecord.iata.org/ns/cargo#Piece')}`)
         expect(res.status).toBe(200)
         expect(res.body['@graph'].length).toBeGreaterThan(1)
-        for (const item of res.body['@graph']) expect(item['@type']).toBe('Piece')
+        for (const item of res.body['@graph']) expect(item['@type']).toBe('https://onerecord.iata.org/ns/cargo#Piece')
     })
 
     it('returns a bare object for a single _all match', () => {
         const res = server.handle('GET', `${DEMO_BASE}/logistics-objects/internal/_all?t=${encodeURIComponent('https://onerecord.iata.org/ns/cargo#Waybill')}`)
         expect(res.body['@graph']).toBeUndefined()
-        expect(res.body['@type']).toBe('Waybill')
+        expect(res.body['@type']).toBe('https://onerecord.iata.org/ns/cargo#Waybill')
     })
 
     it('returns an empty body when _all matches nothing', () => {

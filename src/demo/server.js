@@ -109,11 +109,13 @@ export const createDemoServer = (storage) => {
         body,
     });
 
+    const notFound = (uri) => ({ status: 404, headers: { "content-type": "application/ld+json" }, body: { "@id": uri, "error": "not found" } });
+
     const atKey = (iso) => iso.split(".")[0].replaceAll("-", "").replaceAll(":", "") + "Z";
 
     const getObject = (uri, query) => {
         const entry = blob.objects[uri];
-        if (!entry) return { status: 404, headers: {}, body: {} };
+        if (!entry) return notFound(uri);
         const at = new URLSearchParams(query || "").get("at");
         if (at) {
             const request = (blob.changeRequests[uri] || [])
@@ -158,7 +160,7 @@ export const createDemoServer = (storage) => {
 
     const applyChange = (uri, raw) => {
         const entry = blob.objects[uri];
-        if (!entry) return { status: 404, headers: {}, body: {} };
+        if (!entry) return notFound(uri);
         ((blob.history ??= {})[uri] ??= {})[entry.revision] = {
             body: JSON.parse(JSON.stringify(entry.body)),
             lastModified: entry.lastModified,
@@ -186,7 +188,7 @@ export const createDemoServer = (storage) => {
 
     const auditTrail = (uri) => {
         const entry = blob.objects[uri];
-        if (!entry) return { status: 404, headers: {}, body: {} };
+        if (!entry) return notFound(uri);
         return json(200, {
             "@id": `${uri}/audit-trail`,
             "@type": "AuditTrail",
@@ -214,7 +216,7 @@ export const createDemoServer = (storage) => {
         const type = params.get("t") ? params.get("t").split("#").pop() : null;
         const matches = Object.values(blob.objects)
             .map((entry) => entry.body)
-            .filter((body) => !type || [].concat(body["@type"]).includes(type))
+            .filter((body) => !type || [].concat(body["@type"]).some((t) => String(t).split("#").pop() === type))
             .slice(offset, offset + limit);
         if (!matches.length) return json(200, {});
         if (matches.length === 1) return json(200, matches[0]);

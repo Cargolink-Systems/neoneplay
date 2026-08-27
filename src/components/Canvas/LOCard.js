@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useHover, useFloating, useInteractions, useTransitionStyles } from '@floating-ui/react';
 import { Handle, Position, useStore, MarkerType, setEdges, useReactFlow } from 'reactflow';
 import IconProvider from '@/helpers/IconProvider';
+import resolveGraphById from '@/helpers/resolveGraphById';
 import moment from 'moment';
 import PropList from './ORContent/PropList';
 import useInternalStore from '@/store';
@@ -31,49 +32,7 @@ const selectType = (loTypes) => {
             }
          })
         }
-    return loTypes 
-}
-
-function resolveGraphById(jsonLd, id) {
-    if (!jsonLd["@graph"]) {
-        return jsonLd;
-    }
-
-    // Find the element with the matching @id
-    const mainElement = jsonLd["@graph"].find(element => element["@id"] === id);
-    if (!mainElement) {
-        return null;
-    }
-
-    // Function to replace links with corresponding nodes
-    function replaceLinksWithNodes(obj) {
-        for (const key in obj) {
-            if (obj[key] && typeof obj[key] === 'object' && obj[key]["@id"]) {
-                // Find the linked node
-                const linkedNode = jsonLd["@graph"].find(element => element["@id"] === obj[key]["@id"]);
-                if (linkedNode) {
-                    obj[key] = {...linkedNode};
-                }
-                replaceLinksWithNodes(obj[key])
-            }
-            if (obj[key] && Array.isArray(obj[key])) {
-                // Find the linked node
-                obj[key].forEach(arrayObj => {
-                    const linkedNode = jsonLd["@graph"].find(element => element["@id"] === arrayObj["@id"]);
-                    if (linkedNode) { 
-                        for (const field in linkedNode){
-                            arrayObj[field] = linkedNode[field];    
-                        }
-                    }
-                    replaceLinksWithNodes(arrayObj)
-                })
-            }
-        }
-    }
-
-    // Recursively replace links in the main element
-    replaceLinksWithNodes(mainElement);
-    return mainElement;
+    return String(loTypes).split('#').pop()
 }
 
 const LOCard = ({ id, data, isConnectable }) => {
@@ -127,6 +86,10 @@ const LOCard = ({ id, data, isConnectable }) => {
         )
         prom.catch(() => { setIs404(true) })
         let res = await prom;
+        if (res.status === 404) {
+            setIs404(true)
+            return
+        }
         let body = await res.json()
         body = resolveGraphById(body, url)
         if (body === null) {
