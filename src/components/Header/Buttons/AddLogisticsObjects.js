@@ -31,9 +31,12 @@ const AddLogisticsObjects = () => {
         setLOType("")
         setServer("")
         setCreatedLO("")
+    }, [showPopup])
+
+    useEffect(() => {
         setBrowseResult(null)
         setBrowseOffset(0)
-    }, [showPopup])
+    }, [showPopup, LOType, server])
 
     const createLO = async () => {
         let body_obj = {
