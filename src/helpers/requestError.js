@@ -4,4 +4,9 @@ const requestError = (res) => {
     return 'Request failed (' + res.status + ')'
 }
 
+export const acceptError = (res) => {
+    const err = requestError(res)
+    return err && 'Change request is pending on the server — do not resubmit. ' + err
+}
+
 export default requestError

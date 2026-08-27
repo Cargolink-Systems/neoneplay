@@ -5,7 +5,7 @@ import standard_values from '@/ontology/standard-values';
 import { useEffect, useState } from 'react';
 import PropLine from './PropLine';
 import isValidUrl from '@/helpers/isValidUrl';
-import requestError from '@/helpers/requestError';
+import requestError, { acceptError } from '@/helpers/requestError';
 import { operation } from '@/helpers/Enums';
 
 
@@ -138,7 +138,7 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                         const patchErr = requestError(res)
                         if (patchErr) {
                             setSaveError(patchErr)
-                            setInEdit(0)
+                            setInEdit(1)
                         } else {
                             let header_obj = {};
                             res.headers.forEach((val, key) => { header_obj[key] = val })
@@ -150,7 +150,7 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                                     "Authorization": "Bearer " + token
                                 }
                             })
-                            const acceptErr = requestError(acceptPatch)
+                            const acceptErr = acceptError(acceptPatch)
                             if (acceptErr) {
                                 setSaveError(acceptErr)
                                 setInEdit(0)
