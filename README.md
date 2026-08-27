@@ -1,39 +1,39 @@
 <p align="center">
-  <img width="250" height="250" src="https://i.imgur.com/DovNhG7.png">
+  <img width="200" height="200" src="https://i.imgur.com/DovNhG7.png">
 </p>
 
-
-<h1 align="center">
-  ✨ NE:ONE Play ✨
-</h1>
+<h1 align="center">NE:ONE Play</h1>
+<p align="center">A visual canvas for exploring and editing <a href="https://www.iata.org/en/programs/cargo/e/one-record/">IATA ONE Record</a> logistics objects.</p>
 
 <p align="center"><a href="https://github.com/Cargolink-Systems/neoneplay/actions/workflows/ci.yml"><img src="https://github.com/Cargolink-Systems/neoneplay/actions/workflows/ci.yml/badge.svg" alt="CI"></a></p>
 
-This is a [Hackathon](https://onerecord-fra.devpost.com) implementation of the [NE:ONE Play](https://devpost.com/software/ne-one-play) One Record Editor. Due to the nature of this code being written in 28 hours it is not pretty and pretty buggy. Therefore, this code is to be used <b>at your own Risk</b>, this code is <b>not being maintained</b>. A maintained and production ready version is currently in the planning.
+Maintained by [Cargolink](https://cargolink.aero). Point it at any ONE Record server and it renders logistics objects — waybills, shipments, pieces, movements — as connected cards on an infinite canvas: click a card's link badge to pull in what it references, expand a card to read or edit its properties, open its event panel to see its status history. Issues and PRs welcome.
 
-> **Maintained fork** — this fork is maintained by [Cargolink](https://cargolink.aero). It combines the original hackathon project with the NE:ONE compatibility fixes from `feature/aws`, adds automatic server configuration with token refresh, and tests. Issues and PRs welcome. Original work by the authors credited below.
+## Getting started
 
+Requires Node 20+.
 
-<p align="center">
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=WwSXzxIoqN8" target="_blank">
- <img src="http://img.youtube.com/vi/WwSXzxIoqN8/mqdefault.jpg" alt="Watch the video" width="320" height="180" border="10" />
-</a>
-  <p align="center">&#8593; Submission Video from Hackathon with Demo &#8593;</p>
-</p>
-
-### 🏁 Getting Started
 ```bash
-git clone https://github.com/aloccid-iata/neoneplay.git
+git clone https://github.com/Cargolink-Systems/neoneplay.git
 cd neoneplay
-npm i
+npm install
 npm run dev
 ```
-Now connect to `localhost:3000` and enter your One Record Object ID in the Search bar at the top.
 
-The code was developed and tested (very limited testing 😅) using the Chrome Browser, therefore for the best experience use Chrome.
+Open `http://localhost:3000`.
 
-### 🔐 Preconfigured server (optional)
-Instead of adding a server and pasting a token by hand in the settings dialog, the app can register one server automatically and keep its token fresh via the OAuth2 client credentials flow. Set these environment variables (all three required to activate; without them nothing changes):
+## Using it
+
+1. **Point it at a server.** Click the gear icon (top right) → *ONE Record Servers* → fill in a name, protocol, host, and a bearer token, then submit. No server yet? See [in-browser demo mode](#in-browser-demo-mode) below to try it with zero setup.
+2. **Load an object.** Paste a logistics object's URL into the search bar, click **Add**, then click anywhere on the canvas to place it.
+3. **Explore.** Click a card's link badge (the small `N 🔗` chip) to pull its referenced objects onto the canvas as connected cards. Click a card's chevron to expand its properties; edit a value and save to send a ONE Record change request.
+4. **Check status.** Open a card's event panel to read its logistics events, or post a new one.
+
+Repeat steps 1–2 for as many servers and objects as you want on the same canvas — it can hold multiple servers and objects at once, which is the point of a *ONE Record* view.
+
+### Preconfigured server (optional)
+
+Instead of adding a server by hand, the app can register one automatically and keep its token fresh via the OAuth2 client credentials flow. Set these environment variables (all three of the first group are required to activate; without them, nothing changes):
 
 | Variable | Description |
 |-|-|
@@ -45,46 +45,53 @@ Instead of adding a server and pasting a token by hand in the settings dialog, t
 | `NEONE_PLAY_SERVER_PROTOCOL` | `http` or `https`, default `http` |
 | `NEONE_PLAY_SERVER_COLOR` | Card color, default `#8b5cf6` |
 
-The token request runs server-side (`/api/token`), so the client secret never reaches the browser and the identity provider needs no CORS setup. The token is refreshed automatically before it expires. Keep secrets in your environment or compose file, never in the code.
+Put them in `.env.local` for local development (Next.js loads it automatically) or in your deployment's environment. The token request runs server-side (`/api/token`), so the client secret never reaches the browser and the identity provider needs no CORS setup — it is refreshed automatically before it expires.
 
-Run the tests with `npm test`.
+### In-browser demo mode
 
-### 🧪 In-browser demo mode
-Set `NEXT_PUBLIC_DEMO_MODE=1` to run the app with no backend at all: a virtual server ("Demo — in-browser") is registered automatically and a small ONE Record dataset — a waybill with its shipment, pieces, flight, ULD and status events — is served from localStorage. The seeded waybill is placed on the canvas on load; expand its links from there. Changes, new events and new objects are applied instantly and persist in the browser. To start over, use the "Reset demo data" button next to the demo server in the ONE Record Servers dialog (gear button). Without the variable nothing changes.
+Set `NEXT_PUBLIC_DEMO_MODE=1` to run the app with no backend at all: a virtual server ("Demo — in-browser") is registered automatically and a small ONE Record dataset — a waybill with its shipment, pieces, flight, ULD and status events — is served from `localStorage`. The seeded waybill is placed on the canvas on load; expand its links from there. Changes, new events, and new objects are applied instantly and persist in the browser. To start over, use the "Reset demo data" button next to the demo server in the *ONE Record Servers* dialog.
 
-### ☁️ Deploy the demo
-The root `Dockerfile` builds a standalone production image. `NEXT_PUBLIC_DEMO_MODE` enables the in-browser demo mode above and is baked at build time, so pass it as a build arg:
+Because this flag is inlined into the client bundle at build time, it must be set before `npm run build` (or `npm run dev`), not as a runtime variable on an already-built server:
+
+```bash
+NEXT_PUBLIC_DEMO_MODE=1 npm run dev
+```
+
+## Tests
+
+```bash
+npm test
+```
+
+## Deploying
+
+The root `Dockerfile` builds a standalone production image:
 
 ```bash
 docker build --build-arg NEXT_PUBLIC_DEMO_MODE=1 -t neoneplay-demo .
 docker run -p 3000:3000 neoneplay-demo
 ```
 
-`cloudbuild.yaml` builds and deploys the same image to Google Cloud Run (substitutions: `_REGION`, `_SERVICE`, `_REPO` for the Artifact Registry repository):
+`cloudbuild.yaml` builds and deploys the same image to Google Cloud Run:
 
 ```bash
 gcloud builds submit --config cloudbuild.yaml
 ```
 
-One-time prerequisites on a fresh project, or the command above fails:
-- The Artifact Registry repository named by `_REPO` must exist: `gcloud artifacts repositories create cloud-run-source-deploy --repository-format=docker --location=<region>` (or run `gcloud run deploy --source .` once, which creates it).
-- The Cloud Build service account needs the Cloud Run Admin and Service Account User roles to deploy.
+One-time prerequisites on a fresh GCP project, or the command above fails:
+- The Artifact Registry repository named by the `_REPO` substitution must exist: `gcloud artifacts repositories create cloud-run-source-deploy --repository-format=docker --location=<region>` (or run `gcloud run deploy --source .` once, which creates it).
+- The Cloud Build service account needs the Cloud Run Admin and Service Account User roles.
 
-To preconfigure a server on the deployed service, set the `NEONE_PLAY_*` variables from the section above on the Cloud Run service (for example `gcloud run services update <service> --update-env-vars ...`, or via secrets); they are read at runtime, not build time.
+To preconfigure a server on the deployed service, set the `NEONE_PLAY_*` variables from above on the Cloud Run service (`gcloud run services update <service> --update-env-vars ...`, or via secrets) — they are read at runtime, unlike `NEXT_PUBLIC_DEMO_MODE`.
 
-### 🚧 Known Issues
-- One Record Server has to have enabled [CORS Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
-- When using One Record Servers without token authentication you need to expand the card to load the data (fixing this should just be adding a dependency to the useEffect Effect Array)
-- Some Features only work after a HotReload, this can be done by just changing a random file (could be adding a semicolon) in the project and saving it (for example the arrow descriptors are only located correctly after a hot reload)
-- Patch (Change) Requests only work on text fields outside of embedded objects. After committing a patch request the change is only displayed on servers without tokens, while on a server with a token the change is made but not shown in the UI. (sometimes patches don't work, in the hackathon there was not enough time for debugging)
+## Known issues
 
-### 🔎 Quirks
-In the Hackathon the One Record Servers had a Bearer Token for Security Reasons. To demonstrate the NE:ONE Play Editor we asked for multiple servers to show how it could work with multiple industry players. We were given multiple servers, with the quirk that they all used the same Bearer Token, therefore in the Code (Settings.js file) there is a `globalToken` which is the Token for all of the hackathon servers. In the Hackathon this token was always filled in by hand as it had a lifetime of one hour.
+- The ONE Record server must have [CORS headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) enabled.
+- A card on a server with no bearer token doesn't load automatically on placement — expand it once (click its chevron) to trigger the fetch.
+- Some UI updates only take effect after a hot reload during local development (save any file to trigger one).
 
-### ✨ Development by
-- Figma Design Prototypes: [Man Bao Tran Nguyen](https://www.linkedin.com/in/trannguyen97/)
-- Test Data Creation: [Niclas Scheiber](https://www.linkedin.com/in/niclas-scheiber-1283b8105/)
-- Software Implementation: [Erik Goldenstein](https://www.linkedin.com/in/erik-goldenstein-a338a1224/)
+Found something else? [Open an issue](https://github.com/Cargolink-Systems/neoneplay/issues).
 
---------
-If there are any questions, you are welcome to open an Issue, answers are not guaranteed. If you are interested in further exploring NE:ONE, NE:ONE Play or any other ONE Record related topics together, please feel free to contact Oliver Ditz (oliver.ditz@iml.fraunhofer.de) from the department of aviation logistics of the Fraunhofer IML.
+## Origins
+
+This project started as [NE:ONE Play](https://devpost.com/software/ne-one-play), a hackathon build at the [ONE Record Hackathon](https://onerecord-fra.devpost.com) by Man Bao Tran Nguyen (design), Niclas Scheiber (test data), and Erik Goldenstein (implementation) — see the [original repository](https://github.com/erikgoldenstein/neoneplay) and [submission video](http://www.youtube.com/watch?v=WwSXzxIoqN8) for that history. This fork carries forward the NE:ONE server compatibility fixes from a later community fork, and Cargolink maintains it going forward with automatic server configuration, an in-browser demo mode, tests, and CI.
