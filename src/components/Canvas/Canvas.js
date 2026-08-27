@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
+import demoInitialNodes from '@/demo/initialNodes';
 import ReactFlow, { useNodesState, useEdgesState, addEdge, MiniMap, Controls, Background, useReactFlow, Connection, Edge } from 'reactflow';
 import 'reactflow/dist/style.css';
 import LOCard from './LOCard';
@@ -10,7 +11,7 @@ import EventPanel from './Events/EventPanel';
 
 
 const Canvas = ({setRfInstance}) => {
-    const [nodes, setNodes, onNodesChange] = useNodesState([]);
+    const [nodes, setNodes, onNodesChange] = useNodesState(demoInitialNodes());
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
     const reactFlowInstance = useReactFlow();

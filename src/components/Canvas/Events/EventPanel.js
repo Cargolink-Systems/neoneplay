@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import useInternalStore from "@/store";
 import requestError, { networkError } from '@/helpers/requestError';
 import codeListCode from '@/helpers/codeListCode';
+import resolveGraphById from '@/helpers/resolveGraphById';
 import Select from 'react-select';
 
 
@@ -42,47 +43,6 @@ function EventPanel({ selectedObject, setSelectedObject }) {
         setEventTimeType('')
     }
 
-    function resolveGraphById(jsonLd, id) {
-        if (!jsonLd["@graph"]) {
-            return jsonLd;
-        }
-    
-        // Find the element with the matching @id
-        const mainElement = jsonLd["@graph"].find(element => element["@id"] === id);
-        if (!mainElement) {
-            throw new Error("Element with the provided @id not found");
-        }
-    
-        // Function to replace links with corresponding nodes
-        function replaceLinksWithNodes(obj) {
-            for (const key in obj) {
-                if (obj[key] && typeof obj[key] === 'object' && obj[key]["@id"]) {
-                    // Find the linked node
-                    const linkedNode = jsonLd["@graph"].find(element => element["@id"] === obj[key]["@id"]);
-                    if (linkedNode) {
-                        obj[key] = {...linkedNode};
-                    }
-                }
-                if (obj[key] && Array.isArray(obj[key])) {
-                    // Find the linked node
-                    obj[key].forEach(arrayObj => {
-                        const linkedNode = jsonLd["@graph"].find(element => element["@id"] === arrayObj["@id"]);
-                        if (linkedNode) { 
-                            for (const field in linkedNode){
-                                arrayObj[field] = linkedNode[field];    
-                            }
-                        }
-                        replaceLinksWithNodes(arrayObj)
-                    })
-                }
-            }
-        }
-    
-        // Recursively replace links in the main element
-        replaceLinksWithNodes(mainElement);
-        return mainElement;
-    }
-
     async function readLE(selectedObject) {
         let token;
         servers.map((server, index) => {
@@ -119,6 +79,10 @@ function EventPanel({ selectedObject, setSelectedObject }) {
             let apiOntology = 'https://onerecord.iata.org/ns/api'
             let hasItem = apiOntology + '#hasItem'
             body = resolveGraphById(body, selectedObject + "/logistics-events")
+            if (!body) {
+                setListLE([])
+                return
+            }
             
             if (Array.isArray(body[hasItem])) {
                 body[hasItem].forEach(element => eventList.push(element))
