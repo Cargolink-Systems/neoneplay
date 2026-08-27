@@ -125,8 +125,14 @@ const LOCard = ({ id, data, isConnectable }) => {
                 headers: send_header
             }
         )
-        prom.catch(() => { setIs404(true) })
-        let res = await prom;
+        let res;
+        try {
+            res = await prom;
+        } catch {
+            setIs404(true)
+            setIsAuthFailed(false)
+            return
+        }
         const server = matchServer(servers, data.uri)
         if (res.status == 401) {
             setIs404(false)
@@ -136,6 +142,7 @@ const LOCard = ({ id, data, isConnectable }) => {
         }
         if (!res.ok) {
             setIs404(true)
+            setIsAuthFailed(false)
             return
         }
         setIs404(false)
@@ -154,12 +161,12 @@ const LOCard = ({ id, data, isConnectable }) => {
 
     useEffect(() => {
         if (refetch || firstOpen) {
-        const server = matchServer(servers, data.uri)
-        if (server) {
-            setColor(server.color)
-            setToken(server.token)
-            setDisplayName(server.org_name)
-        }
+            const server = matchServer(servers, data.uri)
+            if (server) {
+                setColor(server.color)
+                setToken(server.token)
+                setDisplayName(server.org_name)
+            }
             getCardData(data.uri, token)
             setRefetch(false)
             setFirstOpen(false)
@@ -303,7 +310,7 @@ const LOCard = ({ id, data, isConnectable }) => {
                                 }
                                 {isAuthFailed &&
                                     <div className='absolute top-[45px] left-[80px] text-amber-600 text-sm'>
-                                        Token expired — update it in settings
+                                        Token expired — update it in the Servers dialog (gear icon)
                                     </div>
                                 }
                             </span>
