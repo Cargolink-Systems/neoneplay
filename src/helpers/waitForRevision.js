@@ -1,4 +1,4 @@
-const waitForRevision = async (uri, token, above, tries = 15, delayMs = 500) => {
+const waitForRevision = async (uri, token, above, tries = 6, delayMs = 500) => {
     for (let i = 0; i < tries; i++) {
         try {
             const res = await fetch(uri, {
@@ -10,11 +10,12 @@ const waitForRevision = async (uri, token, above, tries = 15, delayMs = 500) => 
                 }
             });
             const revision = parseInt(res.headers.get("latest-revision"));
+            if (isNaN(revision)) return null;
             if (revision > above) return revision;
         } catch { }
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        if (i < tries - 1) await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
-    return above;
+    return null;
 };
 
 export default waitForRevision;

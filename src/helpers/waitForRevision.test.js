@@ -19,11 +19,18 @@ describe('waitForRevision', () => {
         expect(init.headers.Authorization).toBe('Bearer t')
     })
 
-    it('gives up after the configured tries', async () => {
+    it('returns null after the configured tries', async () => {
         global.fetch = jest.fn().mockResolvedValue(headRes(2))
         const revision = await waitForRevision('http://a/lo/1', 't', 2, 3, 0)
-        expect(revision).toBe(2)
+        expect(revision).toBeNull()
         expect(global.fetch).toHaveBeenCalledTimes(3)
+    })
+
+    it('returns null immediately when the header is missing', async () => {
+        global.fetch = jest.fn().mockResolvedValue({ headers: { get: () => null } })
+        const revision = await waitForRevision('http://a/lo/1', 't', 2, 5, 0)
+        expect(revision).toBeNull()
+        expect(global.fetch).toHaveBeenCalledTimes(1)
     })
 
     it('keeps polling through fetch failures', async () => {
