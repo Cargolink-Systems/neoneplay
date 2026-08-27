@@ -1,6 +1,6 @@
 const waitForRevision = require('./waitForRevision').default
 
-const headRes = (revision) => ({ headers: { get: () => String(revision) } })
+const headRes = (revision) => ({ ok: true, headers: { get: () => String(revision) } })
 
 describe('waitForRevision', () => {
     afterEach(() => delete global.fetch)
@@ -26,11 +26,20 @@ describe('waitForRevision', () => {
         expect(global.fetch).toHaveBeenCalledTimes(3)
     })
 
-    it('returns null immediately when the header is missing', async () => {
-        global.fetch = jest.fn().mockResolvedValue({ headers: { get: () => null } })
+    it('returns null immediately when an ok response lacks the header', async () => {
+        global.fetch = jest.fn().mockResolvedValue({ ok: true, headers: { get: () => null } })
         const revision = await waitForRevision('http://a/lo/1', 't', 2, 5, 0)
         expect(revision).toBeNull()
         expect(global.fetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('retries through non-ok responses', async () => {
+        global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: false, headers: { get: () => null } })
+            .mockResolvedValueOnce(headRes(3))
+        const revision = await waitForRevision('http://a/lo/1', 't', 2, 5, 0)
+        expect(revision).toBe(3)
+        expect(global.fetch).toHaveBeenCalledTimes(2)
     })
 
     it('keeps polling through fetch failures', async () => {

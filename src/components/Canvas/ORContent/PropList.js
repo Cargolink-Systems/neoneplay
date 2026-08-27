@@ -145,7 +145,8 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                                     "Authorization": "Bearer " + token
                                 }
                             })
-                            await waitForRevision(id, token, parseInt(cardData.headers["latest-revision"]))
+                            const applied = await waitForRevision(id, token, parseInt(cardData.headers["latest-revision"]))
+                            if (applied === null) console.warn("refreshing without revision confirmation", id)
                             setInEdit(0)
                             setRefetch(true)
                         }
