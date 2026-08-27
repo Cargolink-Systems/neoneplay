@@ -49,6 +49,26 @@ The token request runs server-side (`/api/token`), so the client secret never re
 
 Run the tests with `npm test`.
 
+### ☁️ Deploy the demo
+The root `Dockerfile` builds a standalone production image. `NEXT_PUBLIC_DEMO_MODE` enables the in-browser demo mode (ships with PR #4; until that lands the flag has no visible effect) and is baked at build time, so pass it as a build arg:
+
+```bash
+docker build --build-arg NEXT_PUBLIC_DEMO_MODE=1 -t neoneplay-demo .
+docker run -p 3000:3000 neoneplay-demo
+```
+
+`cloudbuild.yaml` builds and deploys the same image to Google Cloud Run (substitutions: `_REGION`, `_SERVICE`, `_REPO` for the Artifact Registry repository):
+
+```bash
+gcloud builds submit --config cloudbuild.yaml
+```
+
+One-time prerequisites on a fresh project, or the command above fails:
+- The Artifact Registry repository named by `_REPO` must exist: `gcloud artifacts repositories create cloud-run-source-deploy --repository-format=docker --location=<region>` (or run `gcloud run deploy --source .` once, which creates it).
+- The Cloud Build service account needs the Cloud Run Admin and Service Account User roles to deploy.
+
+To preconfigure a server on the deployed service, set the `NEONE_PLAY_*` variables from the section above on the Cloud Run service (for example `gcloud run services update <service> --update-env-vars ...`, or via secrets); they are read at runtime, not build time.
+
 ### 🚧 Known Issues
 - One Record Server has to have enabled [CORS Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
 - When using One Record Servers without token authentication you need to expand the card to load the data (fixing this should just be adding a dependency to the useEffect Effect Array)
