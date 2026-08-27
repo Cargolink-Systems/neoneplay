@@ -2,9 +2,10 @@ import iri_description from '@/ontology/iri-description';
 import embobject_properties from '@/ontology/embobject-properties';
 import standard_values from '@/ontology/standard-values';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PropLine from './PropLine';
 import isValidUrl from '@/helpers/isValidUrl';
+import requestError, { acceptError, networkError, pendingError } from '@/helpers/requestError';
 import codeListCode from '@/helpers/codeListCode';
 import { operation } from '@/helpers/Enums';
 import waitForRevision from '@/helpers/waitForRevision';
@@ -14,10 +15,17 @@ import waitForRevision from '@/helpers/waitForRevision';
 const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setInEdit, setRefetch, token }) => {
     const [data, setData] = useState([])
     const [changeMap, setChangeMap] = useState({})
+    const [saveError, setSaveError] = useState('')
+    const keepSaveError = useRef(false)
 
     useEffect(() => {
         if (!inEdit) {
             setData(data.filter((line) => !line.isAddedLine))
+        }
+        if (keepSaveError.current) {
+            keepSaveError.current = false
+        } else {
+            setSaveError('')
         }
     }, [inEdit])
 
@@ -127,29 +135,66 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
                     }
                     //make fetch
                     if (Object.keys(body_obj["api:hasOperation"]).length) {
-                        let res = await fetch(id, {
-                            method: "PATCH",
-                            headers: {
-                                "Content-Type": "application/ld+json",
-                                "Authorization": "Bearer " + token
-                            },
-                            body: JSON.stringify(body_obj)
-                        })
-                        if (res.status == 201) {
-                            let header_obj = {};
-                            res.headers.forEach((val, key) => { header_obj[key] = val })
-                            let acceptPatch = await fetch(header_obj['location']+'?status=REQUEST_ACCEPTED', {
+                        let res
+                        try {
+                            res = await fetch(id, {
                                 method: "PATCH",
                                 headers: {
                                     "Content-Type": "application/ld+json",
-                                    "Accept": "application/ld+json",
                                     "Authorization": "Bearer " + token
-                                }
+                                },
+                                body: JSON.stringify(body_obj)
                             })
-                            const applied = await waitForRevision(id, token, parseInt(cardData.headers["latest-revision"]))
-                            if (applied === null) console.warn("refreshing without revision confirmation", id)
-                            setInEdit(0)
-                            setRefetch(true)
+                        } catch {
+                            keepSaveError.current = true
+                            setSaveError(networkError)
+                            setInEdit(1)
+                            return
+                        }
+                        const patchErr = requestError(res)
+                        if (patchErr) {
+                            keepSaveError.current = true
+                            setSaveError(patchErr)
+                            setInEdit(1)
+                        } else {
+                            let header_obj = {};
+                            res.headers.forEach((val, key) => { header_obj[key] = val })
+                            if (res.status != 201 || !header_obj['location']) {
+                                keepSaveError.current = true
+                                setSaveError('Unexpected server response (' + res.status + ') — the change request may not have been created.')
+                                setInEdit(1)
+                                return
+                            }
+                            let acceptPatch
+                            try {
+                                acceptPatch = await fetch(header_obj['location']+'?status=REQUEST_ACCEPTED', {
+                                    method: "PATCH",
+                                    headers: {
+                                        "Content-Type": "application/ld+json",
+                                        "Accept": "application/ld+json",
+                                        "Authorization": "Bearer " + token
+                                    }
+                                })
+                            } catch {
+                                keepSaveError.current = true
+                                setSaveError(pendingError(networkError))
+                                setInEdit(0)
+                                setRefetch(true)
+                                return
+                            }
+                            const acceptErr = acceptError(acceptPatch)
+                            if (acceptErr) {
+                                keepSaveError.current = true
+                                setSaveError(acceptErr)
+                                setInEdit(0)
+                                setRefetch(true)
+                            } else {
+                                setSaveError('')
+                                const applied = await waitForRevision(id, token, parseInt(cardData.headers["latest-revision"]))
+                                if (applied === null) console.warn("refreshing without revision confirmation", id)
+                                setInEdit(0)
+                                setRefetch(true)
+                            }
                         }
                     } else {
                         console.log("body obj not parsed")
@@ -316,6 +361,7 @@ const PropList = ({ id, cardData, expansionState, links, setLinks, inEdit, setIn
 
     return (
         <>
+            {saveError && <div className="text-red-600 text-xs ml-4 mb-1">{saveError}</div>}
             <div className={`ml-4 overflow-y-scroll
             ${expansionState == 1 && "max-h-[200px]"} 
             ${expansionState == 2 && "max-h-[300px]"} `}
