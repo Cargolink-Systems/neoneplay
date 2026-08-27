@@ -1,0 +1,29 @@
+name: Claude Review
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review PR #${{ github.event.pull_request.number }} in ${{ github.repository }}.
+            Focus, in order: correctness bugs; ONE Record / NE:ONE interoperability mistakes
+            (JSON-LD shapes, code-list IRI forms, revision headers); silent failure paths;
+            repo conventions (no verbose comments, simple names, no duplicated code, tests
+            for new logic). Post concise findings as a single PR review with inline comments
+            where they anchor; if nothing is wrong say so briefly. Never approve, request
+            changes, or merge — a human decides.
+          claude_args: '--allowed-tools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"'
