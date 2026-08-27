@@ -75,6 +75,10 @@ const Canvas = ({setRfInstance}) => {
 
                 <Background color='black' variant='dots' />
             </ReactFlow>
+            {addNodeFlag &&
+                <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10 bg-violet-500 text-white text-sm px-4 py-2 rounded-full shadow-lg">
+                    Click anywhere on the canvas to place the object
+                </div>}
             <EventPanel
                 selectedObject={selectedObjectEvent}
                 setSelectedObject={setSelectedObjectEvent}
