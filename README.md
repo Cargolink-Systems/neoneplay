@@ -7,6 +7,8 @@
   ✨ NE:ONE Play ✨
 </h1>
 
+<p align="center"><a href="https://github.com/Cargolink-Systems/neoneplay/actions/workflows/ci.yml"><img src="https://github.com/Cargolink-Systems/neoneplay/actions/workflows/ci.yml/badge.svg" alt="CI"></a></p>
+
 This is a [Hackathon](https://onerecord-fra.devpost.com) implementation of the [NE:ONE Play](https://devpost.com/software/ne-one-play) One Record Editor. Due to the nature of this code being written in 28 hours it is not pretty and pretty buggy. Therefore, this code is to be used <b>at your own Risk</b>, this code is <b>not being maintained</b>. A maintained and production ready version is currently in the planning.
 
 > **Maintained fork** — this fork is maintained by [Cargolink](https://cargolink.aero). It combines the original hackathon project with the NE:ONE compatibility fixes from `feature/aws`, adds automatic server configuration with token refresh, and tests. Issues and PRs welcome. Original work by the authors credited below.
