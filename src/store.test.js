@@ -25,4 +25,14 @@ describe('servers', () => {
         upsertServer({ org_name: 'B', host: 'b:8080', token: 't2', color: '#fff', protocol: 'http' })
         expect(useInternalStore.getState().servers).toHaveLength(2)
     })
+
+    it('dropServer removes the server with the host', () => {
+        const { upsertServer, dropServer } = useInternalStore.getState()
+        upsertServer({ org_name: 'A', host: 'a:8080', token: 't1', color: '#fff', protocol: 'http' })
+        upsertServer({ org_name: 'B', host: 'b:8080', token: 't2', color: '#fff', protocol: 'http' })
+        dropServer('a:8080')
+        const servers = useInternalStore.getState().servers
+        expect(servers).toHaveLength(1)
+        expect(servers[0].host).toBe('b:8080')
+    })
 })

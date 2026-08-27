@@ -49,8 +49,11 @@ The token request runs server-side (`/api/token`), so the client secret never re
 
 Run the tests with `npm test`.
 
+### 🧪 In-browser demo mode
+Set `NEXT_PUBLIC_DEMO_MODE=1` to run the app with no backend at all: a virtual server ("Demo — in-browser") is registered automatically and a small ONE Record dataset — a waybill with its shipment, pieces, flight, ULD and status events — is served from localStorage. The seeded waybill is placed on the canvas on load; expand its links from there. Changes, new events and new objects are applied instantly and persist in the browser. To start over, use the "Reset demo data" button next to the demo server in the ONE Record Servers dialog (gear button). Without the variable nothing changes.
+
 ### ☁️ Deploy the demo
-The root `Dockerfile` builds a standalone production image. `NEXT_PUBLIC_DEMO_MODE` enables the in-browser demo mode (ships with PR #4; until that lands the flag has no visible effect) and is baked at build time, so pass it as a build arg:
+The root `Dockerfile` builds a standalone production image. `NEXT_PUBLIC_DEMO_MODE` enables the in-browser demo mode above and is baked at build time, so pass it as a build arg:
 
 ```bash
 docker build --build-arg NEXT_PUBLIC_DEMO_MODE=1 -t neoneplay-demo .
