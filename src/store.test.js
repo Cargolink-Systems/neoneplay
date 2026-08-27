@@ -36,12 +36,16 @@ describe('servers', () => {
         expect(servers.find((s) => s.host === 'b:8080').authFailed).toBeUndefined()
     })
 
-    it('setServerAuthFailed leaves state untouched when the flag is unchanged', () => {
+    it('setServerAuthFailed does not notify subscribers when the flag is unchanged', () => {
         const { upsertServer, setServerAuthFailed } = useInternalStore.getState()
         upsertServer({ org_name: 'A', host: 'a:8080', token: 't1', color: '#fff', protocol: 'http' })
         const before = useInternalStore.getState().servers
+        const listener = jest.fn()
+        const unsubscribe = useInternalStore.subscribe(listener)
         setServerAuthFailed('a:8080', false)
+        unsubscribe()
         expect(useInternalStore.getState().servers).toBe(before)
+        expect(listener).not.toHaveBeenCalled()
     })
 
     it('updateServerToken replaces the token and clears the failure flag', () => {
