@@ -1,3 +1,15 @@
+# Deploy is --image only, so it inherits the rest of the live Cloud Run
+# config (scaling, probes) rather than resetting it on every deploy. In
+# particular, the service's startup probe was switched by hand from the
+# Cloud Run default (TCP, which only checks the port is open) to an HTTP
+# probe on / — Next's generated standalone server.js starts accepting
+# TCP connections before its request handler is assigned, so under a TCP
+# probe Cloud Run can route real traffic into that gap and the first
+# request(s) to a fresh instance 500 with "handler is not a function".
+# An HTTP probe only reports ready once / actually responds:
+#   gcloud run services update neoneplay-demo --region=us-east1 \
+#     --startup-probe=httpGet.path=/,httpGet.port=8080,timeoutSeconds=1,periodSeconds=2,failureThreshold=15
+
 timeout: 1200s
 
 options:
