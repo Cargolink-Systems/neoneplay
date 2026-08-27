@@ -87,6 +87,7 @@ To preconfigure a server on the deployed service, set the `NEONE_PLAY_*` variabl
 ## Known issues
 
 - The ONE Record server must have [CORS headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) enabled.
+- A card on a server with no bearer token doesn't load automatically on placement — expand it once (click its chevron) to trigger the fetch.
 - Some UI updates only take effect after a hot reload during local development (save any file to trigger one).
 
 Found something else? [Open an issue](https://github.com/Cargolink-Systems/neoneplay/issues).
