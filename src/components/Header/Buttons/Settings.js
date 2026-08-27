@@ -1,4 +1,5 @@
 import useInternalStore from "@/store";
+import useTabsStore from "@/storeTabs";
 import { useEffect, useState } from "react";
 import { DEMO_HOST } from "@/demo/seed";
 
@@ -67,7 +68,7 @@ const Settings = () => {
                                                     <div className="">
                                                         {server.host === DEMO_HOST && typeof window !== "undefined" && window.demoServer &&
                                                             <button className="flex-none bg-amber-400 hover:bg-amber-500 text-white text-xs px-2 py-1 rounded-full mr-2"
-                                                                onClick={() => { window.demoServer.reset(); window.location.reload() }}>
+                                                                onClick={() => { window.demoServer.reset(); useTabsStore.getState().resetAllTabs(); window.location.reload() }}>
                                                                 Reset demo data
                                                             </button>}
                                                         {/* Color Picker */}

@@ -9,8 +9,25 @@ const node = (uri, x, y) => ({
     position: { x, y },
 });
 
-const demoInitialNodes = () => demoEnabled()
-    ? [node(DEMO_WAYBILL, 250, 150), node(DEMO_MOVEMENT, 700, 150)]
-    : [];
+const tab = (id, name, nodes) => ({
+    id,
+    name,
+    nodes,
+    edges: [],
+    viewport: { x: 0, y: 0, zoom: 1 },
+});
 
-export default demoInitialNodes;
+const initialTabs = () => demoEnabled()
+    ? {
+        tabs: [
+            tab("demo-waybill", "Waybill 729-12345675", [node(DEMO_WAYBILL, 300, 200)]),
+            tab("demo-flight", "Flight AV241", [node(DEMO_MOVEMENT, 300, 200)]),
+        ],
+        activeTabId: "demo-waybill",
+    }
+    : {
+        tabs: [tab("canvas-1", "Canvas 1", [])],
+        activeTabId: "canvas-1",
+    };
+
+export default initialTabs;

@@ -37,6 +37,10 @@ Open `http://localhost:3000`.
 
 Repeat steps 1–2 for as many servers and objects as you want on the same canvas — it can hold multiple servers and objects at once, which is the point of a *ONE Record* view.
 
+### Multiple canvases
+
+The tab bar under the header holds several independent canvases at once — useful for keeping different examples side by side. Click **+** to add a tab, double-click a tab's name to rename it, and click its **×** to close it (the last tab can't be closed). All tabs share the same configured servers; only the placed nodes and edges differ per tab. Tab content persists in the browser across reloads, same as the server list.
+
 ### Preconfigured server (optional)
 
 Instead of adding a server by hand, the app can register one automatically and keep its token fresh via the OAuth2 client credentials flow. Set these environment variables (all three of the first group are required to activate; without them, nothing changes):

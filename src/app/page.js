@@ -1,6 +1,8 @@
 "use client";
 import Header from "@/components/Header/Header";
+import TabBar from "@/components/TabBar/TabBar";
 import useInternalStore from "@/store";
+import useTabsStore from "@/storeTabs";
 import { shallow } from "zustand/shallow";
 import { useEffect, useState } from "react";
 import Canvas from "@/components/Canvas/Canvas";
@@ -10,7 +12,11 @@ import { ReactFlowProvider } from "reactflow";
 export default function Home() {
   const [darkMode] = useInternalStore(state => [state.darkMode], shallow)
   const { addNodeFlag } = useInternalStore()
+  const activeTabId = useTabsStore(state => state.activeTabId)
   const [rfInstance, setRfInstance] = useState(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true) }, []);
 
 
   useEffect(() => {
@@ -33,12 +39,17 @@ export default function Home() {
 
 
 
+  if (!mounted) return null;
+
   return (
     <div className={`flex`}>
-      <ReactFlowProvider>
+      <ReactFlowProvider key={activeTabId}>
         <Canvas setRfInstance={setRfInstance}/>
       </ReactFlowProvider>
-      <Header reactFlow={rfInstance}/>
+      <div className="w-full z-10">
+        <Header reactFlow={rfInstance}/>
+        <TabBar />
+      </div>
     </div >
   )
 }
