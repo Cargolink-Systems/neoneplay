@@ -1,8 +1,8 @@
-const ABSTRACT_TYPES = ["LogisticsObject", "PhysicalLogisticsObject"];
+const ABSTRACT_TYPES = ["LogisticsObject", "PhysicalLogisticsObject", "LoadingUnit", "LogisticsAgent", "LogisticsActivity", "LogisticsService"];
 
 const toItem = (entry) => {
     const types = [].concat(entry["@type"] || []).map((iri) => iri.split("#").pop());
-    const type = types.filter((name) => !ABSTRACT_TYPES.includes(name)).pop() || types.pop() || "";
+    const type = types.find((name) => !ABSTRACT_TYPES.includes(name)) || types[0] || "";
     return { id: entry["@id"], type: type };
 };
 

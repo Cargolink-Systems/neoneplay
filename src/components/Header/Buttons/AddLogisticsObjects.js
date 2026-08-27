@@ -72,11 +72,11 @@ const AddLogisticsObjects = () => {
             host: server.value,
             token: server.token,
             typeIri: "https://onerecord.iata.org/ns/cargo#" + LOType.value,
-            limit: PAGE_SIZE,
+            limit: PAGE_SIZE + 1,
             offset: offset
         })
         setBrowseOffset(offset)
-        setBrowseResult(result)
+        setBrowseResult({ ...result, hasMore: result.items.length > PAGE_SIZE, items: result.items.slice(0, PAGE_SIZE) })
     }
 
     const placeObject = (uri) => {
@@ -170,9 +170,9 @@ const AddLogisticsObjects = () => {
                                             onClick={() => { browse(browseOffset - PAGE_SIZE) }}>
                                             Prev
                                         </button>
-                                        <span className="p-1">{browseOffset + 1} – {browseOffset + browseResult.items.length}</span>
+                                        <span className="p-1">{browseResult.items.length > 0 ? `${browseOffset + 1} – ${browseOffset + browseResult.items.length}` : ""}</span>
                                         <button className="bg-violet-300 text-white px-4 py-1 rounded-full hover:bg-violet-400 active:bg-violet-500 transition-color duration-200 disabled:opacity-50"
-                                            disabled={browseResult.items.length < PAGE_SIZE}
+                                            disabled={!browseResult.hasMore}
                                             onClick={() => { browse(browseOffset + PAGE_SIZE) }}>
                                             Next
                                         </button>

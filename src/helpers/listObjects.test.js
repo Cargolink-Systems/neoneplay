@@ -32,6 +32,23 @@ describe('listObjects', () => {
         ])
     })
 
+    it('picks the specific type regardless of @type order', async () => {
+        global.fetch = respond({
+            '@graph': [
+                { '@id': 'http://a/logistics-objects/1', '@type': [CARGO + 'ULD', CARGO + 'LoadingUnit', CARGO + 'PhysicalLogisticsObject', CARGO + 'LogisticsObject'] },
+                { '@id': 'http://a/logistics-objects/2', '@type': [CARGO + 'LogisticsObject', CARGO + 'LogisticsAgent', CARGO + 'Organization'] },
+            ],
+        })
+        const res = await listObjects(args)
+        expect(res.items.map((i) => i.type)).toEqual(['ULD', 'Organization'])
+    })
+
+    it('falls back to the first type when all are abstract', async () => {
+        global.fetch = respond({ '@id': 'http://a/logistics-objects/1', '@type': [CARGO + 'LogisticsObject'] })
+        const res = await listObjects(args)
+        expect(res.items).toEqual([{ id: 'http://a/logistics-objects/1', type: 'LogisticsObject' }])
+    })
+
     it('handles a single-object response without @graph', async () => {
         global.fetch = respond({ '@id': 'http://a/logistics-objects/1', '@type': CARGO + 'Waybill' })
         const res = await listObjects(args)
