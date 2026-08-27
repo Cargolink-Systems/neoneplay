@@ -87,24 +87,24 @@ const LOCard = ({ id, data, isConnectable }) => {
         )
         let res;
         const server = matchServer(servers, data.uri)
+        const fail = (failed404, failedAuth) => {
+            setIs404(failed404)
+            setIsAuthFailed(failedAuth)
+            server && setServerAuthFailed(server.host, failedAuth)
+            setCardData(null)
+        }
         try {
             res = await prom;
         } catch {
-            setIs404(true)
-            setIsAuthFailed(false)
-            server && setServerAuthFailed(server.host, false)
+            fail(true, false)
             return
         }
         if (res.status == 401) {
-            setIs404(false)
-            setIsAuthFailed(true)
-            server && setServerAuthFailed(server.host, true)
+            fail(false, true)
             return
         }
         if (!res.ok) {
-            setIs404(true)
-            setIsAuthFailed(false)
-            server && setServerAuthFailed(server.host, false)
+            fail(true, false)
             return
         }
         setIs404(false)
@@ -113,7 +113,7 @@ const LOCard = ({ id, data, isConnectable }) => {
         let body = await res.json()
         body = resolveGraphById(body, url)
         if (body === null) {
-            setIs404(true)
+            fail(true, false)
             return
         }
         let header_obj = {};
@@ -335,7 +335,7 @@ const LOCard = ({ id, data, isConnectable }) => {
                 {/* LEFT SIDE BUTTONS */}
                 <div note="left-shifted-buttons" className="relativ ">
                     {/* OPEN LINKS BUTTON */}
-                    {links.length && cardData.headers['latest-revision'] == cardData.headers['revision'] ?
+                    {cardData && links.length && cardData.headers['latest-revision'] == cardData.headers['revision'] ?
                         <button className="absolute right-[-15px] mt-3
                         hover:bg-neutral-100 active:bg-neutral-200 transition-all duratio-300
                         bg-white/[0.9] rounded-full p-1 drop-shadow-md"
