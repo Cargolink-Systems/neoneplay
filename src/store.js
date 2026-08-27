@@ -20,6 +20,7 @@ const useInternalStore = create(
             // source managment
             cleanServer: () => set(() => ({ servers: [] })),
             addServer: (name, host, token, color, protocol) => set((state) => ({ servers: [...state.servers, { org_name: name, host: host, token: token, color: color, protocol: protocol }] })),
+            upsertServer: (server) => set((state) => ({ servers: [...state.servers.filter((item) => item.host !== server.host), server] })),
             removeServer: (server) => set((state) => ({
                 servers: state.servers.filter(function (item) {
                     return (item.name+'-'+item.host !== server.name+'-'+server.host )
