@@ -31,7 +31,7 @@ Open `http://localhost:3000`.
 ## Using it
 
 1. **Point it at a server.** Click the gear icon (top right) → *ONE Record Servers* → fill in a name, protocol, host, and a bearer token, then submit. No server yet? See [in-browser demo mode](#in-browser-demo-mode) below to try it with zero setup.
-2. **Load an object.** Paste a logistics object's URL into the search bar, click **Add**, then click anywhere on the canvas to place it.
+2. **Load an object.** Paste a logistics object's URL into the search bar, click **Add**, then click anywhere on the canvas to place it. Typing anything that isn't a URL instead searches the objects already placed on the active tab — by type or by any property value that has loaded — and highlights and jumps to matches. ONE Record has no server-side text search, so this only finds what's already on your canvas; use step 3 to pull more objects in.
 3. **Explore.** Click a card's link badge (the small `N 🔗` chip) to pull its referenced objects onto the canvas as connected cards. Click a card's chevron to expand its properties; edit a value and save to send a ONE Record change request.
 4. **Check status.** Open a card's event panel to read its logistics events, or post a new one.
 

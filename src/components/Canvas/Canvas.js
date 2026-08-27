@@ -12,8 +12,13 @@ import EventPanel from './Events/EventPanel';
 const Canvas = ({setRfInstance}) => {
     const activeTab = useTabsStore((state) => state.tabs.find((t) => t.id === state.activeTabId));
     const { onNodesChange, onEdgesChange, addNode, setViewport } = useTabsStore()
-    const nodes = activeTab.nodes;
+    const highlightIds = useTabsStore((state) => state.highlightIds)
     const edges = activeTab.edges;
+
+    const highlightSet = useMemo(() => new Set(highlightIds), [highlightIds]);
+    const nodes = useMemo(() => activeTab.nodes.map((n) => highlightSet.has(n.id)
+        ? { ...n, className: 'search-match' }
+        : n), [activeTab.nodes, highlightSet]);
 
     const reactFlowInstance = useReactFlow();
     const rfCanvasRef = useRef(0)

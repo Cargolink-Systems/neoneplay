@@ -17,7 +17,7 @@ const Header = (props) => {
                     alt='LOGO'
                 />
             </div>
-            <Searchbar />
+            <Searchbar reactFlow={props.reactFlow} />
             {/* icon tray */}
             <div className='inline-flex m-2 my-auto p-3 bg-slate-100 dark:bg-slate-800 rounded-full  duration-200 transition-all'>
                 <AddLogisticsObjects />
