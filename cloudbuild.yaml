@@ -7,7 +7,7 @@
 # probe Cloud Run can route real traffic into that gap and the first
 # request(s) to a fresh instance 500 with "handler is not a function".
 # An HTTP probe only reports ready once / actually responds:
-#   gcloud run services update neoneplay-demo --region=us-east1 \
+#   gcloud run services update onerecorddemo --region=us-east1 \
 #     --startup-probe=httpGet.path=/,httpGet.port=8080,timeoutSeconds=1,periodSeconds=2,failureThreshold=15
 
 timeout: 1200s
@@ -17,7 +17,7 @@ options:
 
 substitutions:
   _REGION: us-east1
-  _SERVICE: neoneplay-demo
+  _SERVICE: onerecorddemo
   _REPO: cloud-run-source-deploy
 
 steps:

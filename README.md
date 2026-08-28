@@ -5,9 +5,9 @@
 <h1 align="center">NE:ONE Play</h1>
 <p align="center">A visual canvas for exploring and editing <a href="https://www.iata.org/en/programs/cargo/e/one-record/">IATA ONE Record</a> logistics objects.</p>
 
-<p align="center"><a href="https://github.com/Cargolink-Systems/neoneplay/actions/workflows/ci.yml"><img src="https://github.com/Cargolink-Systems/neoneplay/actions/workflows/ci.yml/badge.svg" alt="CI"></a></p>
+<p align="center"><a href="https://github.com/Cargolink-Systems/onerecorddemo/actions/workflows/ci.yml"><img src="https://github.com/Cargolink-Systems/onerecorddemo/actions/workflows/ci.yml/badge.svg" alt="CI"></a></p>
 
-<p align="center"><b><a href="https://neoneplay-demo-ji4awmyy3a-ue.a.run.app">Try the live demo</a></b> — in-browser demo mode, no server or account needed.</p>
+<p align="center"><b><a href="https://onerecorddemo.cargolink.aero">Try the live demo</a></b> — in-browser demo mode, no server or account needed.</p>
 
 Maintained by [Cargolink](https://cargolink.aero). Point it at any ONE Record server and it renders logistics objects — waybills, shipments, pieces, movements — as connected cards on an infinite canvas: click a card's link badge to pull in what it references, expand a card to read or edit its properties, open its event panel to see its status history. Issues and PRs welcome.
 
@@ -20,8 +20,8 @@ This project started as [NE:ONE Play](https://devpost.com/software/ne-one-play),
 Requires Node 20+.
 
 ```bash
-git clone https://github.com/Cargolink-Systems/neoneplay.git
-cd neoneplay
+git clone https://github.com/Cargolink-Systems/onerecorddemo.git
+cd onerecorddemo
 npm install
 npm run dev
 ```
@@ -78,8 +78,8 @@ npm test
 The root `Dockerfile` builds a standalone production image:
 
 ```bash
-docker build --build-arg NEXT_PUBLIC_DEMO_MODE=1 -t neoneplay-demo .
-docker run -p 3000:3000 neoneplay-demo
+docker build --build-arg NEXT_PUBLIC_DEMO_MODE=1 -t onerecorddemo .
+docker run -p 3000:3000 onerecorddemo
 ```
 
 `cloudbuild.yaml` builds and deploys the same image to Google Cloud Run:
@@ -88,7 +88,7 @@ docker run -p 3000:3000 neoneplay-demo
 gcloud builds submit --config cloudbuild.yaml
 ```
 
-Every push to `main` triggers this automatically (Cloud Build trigger `deploy-neoneplay`, project `air-connect-479417`, region `us-east1`), redeploying the `neoneplay-demo` Cloud Run service linked above.
+Every push to `main` triggers this automatically (Cloud Build trigger `deploy-onerecorddemo`, project `air-connect-479417`, region `us-east1`), redeploying the `onerecorddemo` Cloud Run service linked above.
 
 One-time prerequisites on a fresh GCP project, or the command above fails:
 - The Artifact Registry repository named by the `_REPO` substitution must exist: `gcloud artifacts repositories create cloud-run-source-deploy --repository-format=docker --location=<region>` (or run `gcloud run deploy --source .` once, which creates it).
@@ -102,5 +102,5 @@ To preconfigure a server on the deployed service, set the `NEONE_PLAY_*` variabl
 - A card on a server with no bearer token doesn't load automatically on placement — expand it once (click its chevron) to trigger the fetch.
 - Some UI updates only take effect after a hot reload during local development (save any file to trigger one).
 
-Found something else? [Open an issue](https://github.com/Cargolink-Systems/neoneplay/issues).
+Found something else? [Open an issue](https://github.com/Cargolink-Systems/onerecorddemo/issues).
 
